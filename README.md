@@ -18,8 +18,9 @@ Nhóm gồm 2 người và đã được chấp nhận tham gia với quy mô n�
 - Sử dụng repository này làm nơi phát triển và nộp bài chung của nhóm.
 - Đề tài đã chốt: **Vin Driver Watch — cảnh báo nhắm mắt kéo dài bằng webcam**.
 - Xem [kế hoạch thực hiện](PLAN.md) để biết phạm vi, phân công đề xuất, lịch 120 phút, đánh giá và checklist nộp bài.
-- Tên nhóm, trưởng nhóm và phân công chính thức sẽ được cập nhật khi xác nhận.
-- Đã tạo khung thư mục và file để hai thành viên phát triển. Nhận diện, cảnh báo và đánh giá chưa được triển khai.
+- Phân công branch đã chốt; tên nhóm và trưởng nhóm sẽ cập nhật khi xác nhận.
+- Phần Quý đã có: detector MediaPipe, EAR, hiệu chỉnh, bộ trạng thái và vòng chạy webcam/video; xem [ghi chú triển khai](docs/implementation.md).
+- Overlay chính thức, CSV và đánh giá của Tuyên chưa triển khai ở bản này. Ứng dụng có hiển thị tối thiểu để thử độc lập.
 
 ## Bắt đầu phát triển
 
@@ -29,7 +30,7 @@ dữ liệu mẫu trong `scripts/mock_results.py`. Kiểu dữ liệu chung ở 
 
 ```text
 app.py                    Điểm tích hợp ứng dụng (Quý)
-requirements.txt          Phụ thuộc dự kiến, chưa chốt phiên bản
+requirements.txt          Phiên bản phụ thuộc đã kiểm tra
 src/eye_detector.py       Mốc mắt và EAR (Quý)
 src/state_machine.py      Hiệu chỉnh, trạng thái và cảnh báo (Quý)
 src/overlay.py            Giao diện OpenCV (Tuyên)
@@ -41,8 +42,57 @@ data/                    Dữ liệu cục bộ, bỏ qua bởi Git
 models/                  Model cục bộ, bỏ qua bởi Git
 ```
 
-Để kiểm tra điểm chạy khung, dùng `python app.py` (hoặc `python3 app.py`). Lệnh này chỉ in trạng thái dự án, chưa mở webcam.
-Hướng dẫn cài phụ thuộc, tải model và chạy nhận diện sẽ được bổ sung khi triển khai và kiểm tra trên máy demo.
+## Cài đặt và chạy phần nhận diện
+
+Dùng Python **3.10–3.12**; khuyến nghị 3.12. Tạo môi trường tại gốc repo:
+
+```bash
+python3.12 -m venv .venv
+```
+
+Kích hoạt trên macOS/Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+Trên Windows PowerShell, thay lệnh tạo môi trường bằng `py -3.12 -m venv .venv`, rồi kích hoạt:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Trong môi trường đã kích hoạt:
+
+```bash
+python -m pip install -r requirements.txt
+python -m scripts.download_model
+python app.py --camera 0
+```
+
+Chỉ một người trong hình, nhìn thẳng và mở mắt bình thường đến khi đủ 60 mẫu.
+`R` hiệu chỉnh lại; `Q` hoặc `Esc` thoát. Cấp quyền Camera cho ứng dụng terminal nếu macOS yêu cầu.
+Model tải về được kiểm tra SHA256 và không commit lên Git.
+
+Phát lại video tự quay có FPS cố định (đầu video cần có đoạn mắt mở để hiệu chỉnh):
+
+```bash
+python app.py --video data/videos/test.mp4
+python app.py --video data/videos/test.mp4 --headless
+```
+
+`--alert-after 0` chạy phương án cơ sở cảnh báo ngay; mặc định là 1,5 giây.
+`--fps` chỉ dùng để cung cấp FPS nguồn nếu metadata sai/thiếu; không dùng video tốc độ khung hình biến thiên cho đánh giá hiện tại.
+`--log data/logs/run.csv` chỉ dùng sau khi Tuyên triển khai `EventLogger`.
+Ứng dụng không tự quay video hoặc lưu hình ảnh.
+
+Kiểm thử không cần model/webcam:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Chưa có số đo nhận diện trên Quý/Tuyên; kiểm thử tự động không thay thế đánh giá thực tế.
 
 ## Yêu cầu sản phẩm
 

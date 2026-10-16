@@ -90,7 +90,9 @@ index.html              # Trang đề bài gốc
 ```
 
 Khung thư mục đã tạo. Hợp đồng dữ liệu đã có tại `src/contracts.py`, nguồn mẫu tại
-`scripts/mock_results.py`; nhận diện, cảnh báo, overlay và logger chưa triển khai.
+`scripts/mock_results.py`. Trên branch `feature/eye-detection`, phần Quý đã triển khai
+detector, EAR, hiệu chỉnh, bộ trạng thái và vòng chạy webcam/video; ghi chú tại
+`docs/implementation.md`. Overlay chính thức, logger và đánh giá của Tuyên chưa triển khai ở bản này.
 
 ### Quyết định phối hợp đã chốt
 

@@ -1,5 +1,5 @@
-# Các phụ thuộc dự kiến; chưa cài/kiểm tra tương thích hoặc chốt phiên bản.
-# Chốt phiên bản sau khi chạy trên đúng máy demo.
-opencv-python
-mediapipe
-numpy
+# Một bản OpenCV duy nhất: MediaPipe phụ thuộc opencv-contrib-python.
+# Môi trường kiểm tra: Python 3.12, macOS arm64. Xem docs/implementation.md.
+mediapipe==0.10.32
+opencv-contrib-python==4.11.0.86
+numpy==1.26.4

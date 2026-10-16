@@ -1,6 +1,7 @@
 # Phối hợp phát triển
 
-Hiện là khung dự án, chưa có nhận diện, cảnh báo hoặc đánh giá hoạt động.
+Phần Quý đã triển khai detector, bộ trạng thái và vòng chạy; xem `docs/implementation.md`.
+Phần overlay, logger và đánh giá của Tuyên vẫn là khung trong bản này.
 Phân công và giao diện dưới đây đã được chốt để hai người làm song song.
 
 | Người | Branch | File phụ trách |
@@ -22,7 +23,7 @@ Quý cung cấp bộ xử lý nhận khung hình và `timestamp_s`, trả về c
 | `alert_event` | Chỉ đúng ở lần phát sinh sự kiện mới |
 
 Kiểu chung nằm trong `src/contracts.py`. Cả hai import trực tiếp, không sao chép
-hoặc tự thay đổi tên trường. API cần triển khai đúng như sau (hiện chưa có triển khai):
+hoặc tự thay đổi tên trường. API thống nhất như sau:
 
 ```python
 # Quý — src/eye_detector.py
