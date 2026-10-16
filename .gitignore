@@ -52,3 +52,4 @@ backup_demo/*.mp4
 .vscode/
 .idea/
 *.swp
+.claude/
