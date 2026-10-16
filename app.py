@@ -15,6 +15,7 @@ import sys
 import time
 
 from src.contracts import DriverState, FrameResult
+from src.alarm import AlarmSound
 from src.eye_detector import EyeDetector
 from src.state_machine import DriverStateMachine
 
@@ -35,6 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-gap", type=float, default=0.5)
     parser.add_argument("--fps", type=float, help="FPS nguồn video khi metadata sai/thiếu; không phải FPS xử lý")
     parser.add_argument("--headless", action="store_true", help="Không mở cửa sổ (kiểm tra video)")
+    parser.add_argument("--mute", action="store_true", help="Tắt tiếng bíp; headless luôn tắt âm thanh")
     parser.add_argument("--max-frames", type=int, help="Dừng sau N khung hình")
     parser.add_argument("--log", type=Path, help="CSV qua EventLogger của Tuyên, khi module đã có")
     return parser
@@ -96,6 +98,7 @@ def run(args: argparse.Namespace) -> int:
     events = 0
     frame_id = 0
     log_part = 1
+    alarm = AlarmSound(enabled=not (args.mute or args.headless))
     try:
         detector = EyeDetector(str(args.model))
         capture = cv2.VideoCapture(source)
@@ -127,6 +130,7 @@ def run(args: argparse.Namespace) -> int:
             counts[decision.state.value] += 1
             if decision.alert_event:
                 events += 1
+                alarm.play()
                 print(json.dumps({"event": "eyes_closed", "timestamp_s": timestamp,
                                   "closed_duration_s": decision.closed_duration_s}))
             if args.log and decision.close_threshold is not None:
@@ -169,6 +173,7 @@ def run(args: argparse.Namespace) -> int:
                           "states": dict(counts)}, ensure_ascii=False))
         return 0
     finally:
+        alarm.close()
         # Đảm bảo lỗi một tài nguyên không ngăn đóng các tài nguyên còn lại.
         try:
             if logger is not None:

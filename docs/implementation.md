@@ -13,6 +13,9 @@
 - `reset()` xóa hiệu chỉnh, bộ đếm và mốc thời gian. Camera mất kết nối được báo lỗi và đóng tài nguyên; không tự mở camera lại.
 - Webcam dùng đồng hồ đơn điệu tương đối; video FPS cố định dùng `frame_id / source_fps`.
 - Vòng chạy tích hợp, hiển thị tối thiểu, phát lại video, chế độ không mở cửa sổ và tải model có checksum.
+- Âm báo qua `src/alarm.py`: một bíp 880 Hz, 0,3 giây mỗi sự kiện mới, cooldown 3 giây theo đồng hồ thực.
+  Chạy bằng luồng nền, không xếp hàng khi loa bận. Không phát lại trong cùng chuỗi ALERT.
+  `--mute` hoặc `--headless` tắt âm; lỗi loa chỉ tắt âm, không dừng nhận diện.
 
 EAR = `(distance(p2,p6) + distance(p3,p5)) / (2 × distance(p1,p4))`.
 EAR tổng hợp là trung bình hai mắt. Công thức khoảng cách dùng thư viện chuẩn;
@@ -48,6 +51,10 @@ Kiểm tra đã chạy trong lần bàn giao:
 - Video tổng hợp không có mặt, 10 khung hình: 10 UNKNOWN, không có sự kiện cảnh báo,
   đọc hết video và đóng bình thường.
 - Chưa mở webcam hoặc đánh giá khuôn mặt thật. Không dùng các kiểm tra trên làm số đo chính xác.
+
+Bổ sung âm báo: tổng 34 kiểm thử đạt, gồm chống phát lặp, cooldown, lỗi thiết bị,
+và nối sự kiện ALERT với loa. Lệnh `python -m src.alarm` đã gửi bíp tới thiết bị
+đầu ra mặc định không báo lỗi; mức âm lượng và khả năng nghe thực tế do người dùng kiểm tra.
 
 Trên macOS, dù chọn CPU, MediaPipe vẫn có thể cần ngữ cảnh đồ họa hệ thống khi
 khởi tạo. Lượt kiểm tra model thật đã chạy ngoài sandbox sau khi sandbox báo lỗi

@@ -74,6 +74,12 @@ Chỉ một người trong hình, nhìn thẳng và mở mắt bình thường �
 `R` hiệu chỉnh lại; `Q` hoặc `Esc` thoát. Cấp quyền Camera cho ứng dụng terminal nếu macOS yêu cầu.
 Model tải về được kiểm tra SHA256 và không commit lên Git.
 
+Mỗi sự kiện ALERT mới phát một bíp 0,3 giây qua loa mặc định, nghỉ ít nhất 3 giây
+giữa hai lần phát. Giữ mắt đóng không phát lặp theo từng khung hình.
+Dùng `--mute` để tắt tiếng; `--headless` luôn tắt âm thanh. Nếu loa lỗi,
+ứng dụng báo lỗi trong terminal và vẫn giữ cảnh báo trên hình.
+Thử riêng âm thanh: `python -m src.alarm`.
+
 Phát lại video tự quay có FPS cố định (đầu video cần có đoạn mắt mở để hiệu chỉnh):
 
 ```bash

@@ -103,6 +103,19 @@ class AppTests(unittest.TestCase):
             self.assertEqual(logger_class.return_value.write.call_count, 2)
             logger_class.return_value.close.assert_called_once()
 
+    def test_long_closure_sends_one_sound_event_not_one_per_frame(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            args, cv2, capture, detector = self.setup_run(temporary)
+            args.alert_after = 0
+            capture.read.side_effect = [(True, object()) for _ in range(4)] + [(False, None)]
+            detector.detect.side_effect = [EyeObservation(True, 0.3, 0.3, 0.3)] + [
+                EyeObservation(True, 0.1, 0.1, 0.1) for _ in range(3)]
+            with patch.dict(sys.modules, {"cv2": cv2}), patch.object(app, "EyeDetector", return_value=detector), patch.object(app, "AlarmSound") as alarm, redirect_stdout(io.StringIO()):
+                app.run(args)
+            alarm.assert_called_once_with(enabled=False)  # headless luôn tắt loa
+            alarm.return_value.play.assert_called_once()
+            alarm.return_value.close.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
