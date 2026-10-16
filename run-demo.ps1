@@ -6,8 +6,8 @@ if (-not (Test-Path (Join-Path $pythonPrefix 'python.exe'))) {
 }
 Push-Location $PSScriptRoot
 try {
-    # The default run shows the live webcam overlay and the Three.js physics mirror.
-    $launchArgs = @('--mode', 'arm', '--headless', '--web') + $args
+    # The browser shows the annotated webcam and Three.js physics mirror.
+    $launchArgs = @('--mode', 'arm', '--headless', '--web', '--no-overlay') + $args
     & (Join-Path $pythonPrefix 'python.exe') main.py @launchArgs
     $result = $LASTEXITCODE
 } finally {

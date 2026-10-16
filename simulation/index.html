@@ -20,6 +20,14 @@
       <div class="top-meta"><span class="live-dot"></span><span id="connection">ĐANG KẾT NỐI</span><span class="meta-divider"></span><span>CPU MODE</span></div>
     </header>
 
+    <aside id="camera-card" class="camera-card" hidden aria-label="Webcam và keypoint nhận diện">
+      <div class="camera-head"><span>WEBCAM · KEYPOINTS</span><small id="camera-state">ĐANG CHỜ CAMERA</small></div>
+      <div class="camera-view">
+        <img id="camera-frame" alt="Video webcam đã phủ keypoint cánh tay và bàn tay">
+        <div id="camera-placeholder">Đang chờ khung hình webcam…</div>
+      </div>
+    </aside>
+
     <aside class="control-panel">
       <div class="panel-kicker"><span class="kicker-line"></span>WORKCELL 01</div>
       <h1>Gắp và phân loại</h1>
@@ -38,6 +46,7 @@
       <button class="demo-button" id="demo-button" type="button"><span class="play-icon">▶</span><span><b>Chạy demo gắp hàng</b><small>Phát lại một lượt gắp mẫu</small></span><span class="button-arrow">↗</span></button>
       <button class="reset-button" id="reset-button" type="button">Đưa robot về vị trí chờ <span>↺</span></button>
       <div id="integration-controls" hidden>
+        <button class="reset-button" data-input="r" type="button">Reset robot (R)</button>
         <button class="reset-button" data-input="p" type="button">Tạm dừng (P)</button>
         <button class="reset-button" data-input="c" type="button">Xác nhận tiếp tục (C)</button>
         <button class="reset-button" data-input="t" type="button">Bắt đầu lượt đo (T)</button>
@@ -60,6 +69,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="loading" id="loading"><span class="loader"></span><span>ĐANG TẢI MÔI TRƯỜNG 3D</span></div>
   </main>
+  <script src="live.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="app.js"></script>
 </body>

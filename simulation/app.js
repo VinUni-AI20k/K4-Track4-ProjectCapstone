@@ -344,7 +344,10 @@
   }
   function stopDemo() { demo = null; $("demo-button").disabled = false; }
   function resetArm() {
-    if (integratedState) { sendInput("r"); return; }
+    if (integratedState) {
+      if (window.robotBridgeSendInput) window.robotBridgeSendInput("r");
+      return;
+    }
     stopDemo(); resetProducts(); commandedTarget.set(-.2, 2.08, .12); commandedGrip = 0;
     updateStatus("Đang chờ lệnh", apiOnline ? "Gửi lệnh qua API để di chuyển robot" : "Khởi động bridge để nhận lệnh", false);
   }
@@ -371,25 +374,17 @@
       if (!response.ok) throw new Error("bridge offline");
       var body = await response.json();
       if (!apiOnline) {
-        apiOnline = true; $("connection").textContent = "BRIDGE SẴN SÀNG"; document.querySelector(".live-dot").classList.remove("offline");
-        if (!demo) updateStatus("Đang chờ lệnh", "Gửi lệnh qua API để di chuyển robot", false);
+        apiOnline = true;
       }
       if (!integratedState && body.command && body.sequence > lastSequence) { lastSequence = body.sequence; applyCommand(body.command); }
     } catch (_) {
-      apiOnline = false; $("connection").textContent = "BRIDGE NGOẠI TUYẾN"; document.querySelector(".live-dot").classList.add("offline");
-      if (!demo) updateStatus("Chưa kết nối bridge", "Chạy python simulation/serve.py để nhận lệnh", false);
+      apiOnline = false;
     }
     window.setTimeout(pollCommands, 26);
   }
   fetch("/api/health", { cache: "no-store" }).catch(function () {});
   pollCommands();
 
-  async function sendInput(key) {
-    try {
-      var response = await fetch("/api/input", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({key: key}) });
-      if (!response.ok) throw new Error("input rejected");
-    } catch (_) { showToast("Không gửi được lệnh; kiểm tra main.py --web"); }
-  }
   async function pollState() {
     try {
       var response = await fetch("/api/state", {cache: "no-store"});
@@ -409,18 +404,31 @@
         $("demo-button").disabled = true;
         $("integration-controls").hidden = false;
         document.body.classList.add("integrated");
+        $("camera-card").hidden = false;
+        $("reset-button").style.display = "none";
         var armMode = body.control_mode === "arm";
         $("demo-button").style.display = armMode ? "none" : "";
         document.querySelector("h1").textContent = armMode ? "Robot theo cánh tay" : "Gắp và phân loại";
-        document.querySelector(".intro").textContent = armMode ? "Đưa vai, khuỷu và cổ tay vào webcam. Giữ yên, nhấn C để hiệu chuẩn; đưa đầu gắp tới hộp, chụm để nhấc và mở khi ở trên giỏ." : "Trạng thái thực từ PyBullet. Điều khiển bằng tay trong webcam; cảnh này chỉ hiển thị kết quả.";
+        document.querySelector(".intro").textContent = armMode ? "Xem webcam và keypoint ở góc trên phải. Giữ yên, nhấn C để hiệu chuẩn; đưa đầu gắp tới hộp, chụm để nhấc và mở khi ở trên giỏ." : "Webcam và keypoint ở góc trên phải. Điều khiển bằng tay trong webcam; cảnh 3D hiển thị trạng thái thực từ PyBullet.";
         document.querySelector('[data-input="t"]').style.display = armMode ? "none" : "";
+      } else if (!body.active) {
+        $("connection").textContent = "CHƯA NỐI ROBOT";
+        document.querySelector(".live-dot").classList.add("offline");
+        updateStatus("Chỉ đang xem cảnh 3D", "Chạy ./run-demo.ps1 để nối webcam và robot thật trong mô phỏng.", false);
+        $("camera-card").hidden = false;
+        $("camera-state").textContent = "CHƯA KẾT NỐI";
+        $("camera-placeholder").textContent = "Chạy ./run-demo.ps1 — không mở riêng simulation/serve.py.";
+      } else {
+        $("connection").textContent = "ĐANG KHỞI ĐỘNG ROBOT";
+        updateStatus("Đang kết nối webcam và PyBullet", "Giữ cửa sổ này mở trong khi main.py khởi động.", true);
       }
-    } catch (_) { /* Keep the last physics frame, never simulate missing feedback. */ }
+    } catch (_) {
+      $("connection").textContent = "MAIN NGOẠI TUYẾN";
+      document.querySelector(".live-dot").classList.add("offline");
+      updateStatus("Không nối được main.py", "Khởi động sản phẩm bằng ./run-demo.ps1.", false);
+    }
     window.setTimeout(pollState, 50);
   }
-  document.querySelectorAll("[data-input]").forEach(function (button) {
-    button.addEventListener("click", function () { sendInput(button.getAttribute("data-input")); });
-  });
   pollState();
 
   // Display-only world transform: canonical Z-up meters -> Three.js Y-up.

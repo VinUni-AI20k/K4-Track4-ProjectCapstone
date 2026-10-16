@@ -9,7 +9,7 @@ Trên Windows, tại gốc repo:
 ./run-demo.ps1
 ```
 
-Setup tạo runtime Python 3.11 trong .runtime, cài MediaPipe/OpenCV/PyBullet CPU và tải model vào models. Sau setup, run-demo mặc định mở webcam overlay và viewer Three.js tại http://127.0.0.1:8765; PyBullet chạy DIRECT. Không cần GPU hoặc camera depth.
+Setup tạo runtime Python 3.11 trong .runtime, cài MediaPipe/OpenCV/PyBullet CPU và tải model vào models. `run-demo.ps1` mở webcam có phủ keypoint ngay trên viewer Three.js; PyBullet chạy DIRECT. Video và lệnh điều khiển đi qua bridge HTTP chỉ bind trên máy local. Nếu cổng 8765 đang bận, mở đúng địa chỉ được in trong terminal. Không cần GPU hoặc camera depth.
 
 Tùy chọn thường dùng:
 
@@ -22,7 +22,7 @@ Tùy chọn thường dùng:
 
 ## Điều khiển bằng cánh tay và gắp hàng
 
-Webcam cần thấy vai, khuỷu, cổ tay và bàn tay của bên đã chọn. Cửa sổ camera vẽ bộ xương tay, các điểm bàn tay và pinch ratio. Trang 3D hiển thị Panda, hộp đang được nhắm tới, hộp đang mang và các hộp đã vào giỏ.
+Webcam cần thấy vai, khuỷu, cổ tay và bàn tay của bên đã chọn. Khung webcam trong viewer vẽ bộ xương tay, các điểm bàn tay và pinch ratio. Trang 3D hiển thị Panda, hộp đang được nhắm tới, hộp đang mang và các hộp đã vào giỏ.
 
 1. Giữ tư thế thoải mái rồi nhấn C. Giữ cánh tay yên khoảng 0.6 giây để robot lấy tư thế hiện tại làm mốc.
 2. Di chuyển cánh tay. Cổ tay điều khiển vị trí đầu gắp trong XYZ tương đối với vai; khuỷu là gợi ý cho tư thế IK của Panda.
@@ -39,11 +39,11 @@ Chế độ này cho người vận hành tự đưa đầu gắp xuống và n�
 ```text
 webcam -> Holistic CPU -> ArmSample + keypoint overlay
        -> arm controller -> RobotCommand -> PyBullet Panda
-                                              -> attach/release + basket check
-                                              -> local HTTP snapshot -> Three.js
+       -> attach/release + basket check
+       -> local HTTP bridge -> browser camera/keypoints + Three.js state
 ```
 
-Main thread duy nhất thao tác simulator. Worker camera chỉ cập nhật mẫu mới nhất; bridge web chỉ đọc snapshot và nhận nút pause/resume/reset. Webcam không được truyền qua HTTP hoặc ghi vào log. Các hộp đứng tại trạm trên băng chuyền trong MVP; trang 3D minh họa đầy đủ dây chuyền, còn vật lý PyBullet xác nhận gắp/thả.
+Main thread duy nhất thao tác simulator. Worker camera chỉ cập nhật mẫu mới nhất; bridge local gửi ảnh đã phủ keypoint tối đa 15 FPS lên viewer và nhận nút pause/resume/reset. Ảnh không rời khỏi máy local và không được ghi vào log. Các hộp đứng tại trạm trên băng chuyền trong MVP; trang 3D minh họa đầy đủ dây chuyền, còn vật lý PyBullet xác nhận gắp/thả.
 
 ## Chế độ khác
 

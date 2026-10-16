@@ -17,6 +17,15 @@ button { color:inherit; font:inherit; }
 .brand b { display:block; font-size:12px; font-weight:700; letter-spacing:.16em; line-height:1.4; }
 .brand small { display:block; color:var(--muted); font:9px var(--mono); letter-spacing:.1em; }
 .top-meta { display:flex; align-items:center; gap:9px; color:#bdc9ce; font:10px var(--mono); letter-spacing:.08em; }
+.camera-card { position:absolute; z-index:2; top:76px; right:30px; width:min(310px,28vw); padding:9px; border:1px solid rgba(196,216,229,.2); border-radius:10px; background:rgba(16,24,32,.9); box-shadow:0 18px 46px rgba(0,0,0,.32); backdrop-filter:blur(12px); }
+.camera-card[hidden] { display:none !important; }
+.camera-head { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:1px 2px 8px; color:#b9c8ce; font:9px var(--mono); letter-spacing:.07em; }
+.camera-head small { color:var(--cyan); font:8px var(--mono); }
+.camera-view { position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; border:1px solid rgba(108,225,208,.23); border-radius:6px; background:#080d11; }
+.camera-view img { display:none; width:100%; height:100%; object-fit:cover; }
+.camera-view img.live { display:block; }
+#camera-placeholder { position:absolute; inset:0; display:grid; place-items:center; padding:10px; color:#93a4ac; text-align:center; font-size:10px; }
+#camera-placeholder[hidden] { display:none; }
 .live-dot,.api-dot { width:7px; height:7px; border-radius:100%; background:#51d6a5; box-shadow:0 0 12px rgba(81,214,165,.65); }
 .live-dot.offline { background:#ff706f; box-shadow:0 0 12px rgba(255,112,111,.55); }
 .meta-divider { width:1px; height:14px; margin:0 4px; background:var(--line); }
@@ -82,6 +91,8 @@ h1 { margin:13px 0 7px; font-size:25px; font-weight:600; letter-spacing:-.04em; 
 @media(max-width:760px) {
   .topbar { left:16px; right:16px; top:14px; }
   .top-meta { font-size:8px; gap:6px; }
+  .camera-card { top:61px; right:12px; width:min(180px,42vw); padding:6px; }
+  .camera-head { padding-bottom:5px; font-size:7px; } .camera-head small { font-size:7px; }
   .control-panel { top:auto; left:12px; right:12px; bottom:12px; width:auto; max-height:48%; padding:15px 16px; border-radius:11px; }
   .panel-kicker { font-size:9px; } h1 { margin:8px 0 4px; font-size:20px; }
   .intro { max-width:none; font-size:10px; }

@@ -47,6 +47,8 @@ def run(vision, simulation, metrics=None, config: Config = DEFAULT_CONFIG,
         previous = started
         last_vision_error = None
         emit(Event(clock(), "session_started"))
+        last_camera_overlay = None
+        last_camera_publish = 0.0
         while duration_s is None or clock() - started < duration_s:
             tick = clock()
             # Cap after stalls: never let a delayed GUI advance a large physics step.
@@ -55,21 +57,30 @@ def run(vision, simulation, metrics=None, config: Config = DEFAULT_CONFIG,
             key = vision.poll_key() if hasattr(vision, "poll_key") else None
             if bridge is not None:
                 key = bridge.poll_key() or key
-            if show_overlay and hasattr(vision, "latest_overlay"):
-                frame = vision.latest_overlay()
-                if frame is not None:
+            sample = vision.latest_sample()
+            if (show_overlay or bridge is not None) and hasattr(vision, "latest_overlay"):
+                overlay = vision.latest_overlay()
+                if overlay is not None:
                     if cv2 is None:
                         cv2 = importlib.import_module("cv2")
-                    frame = frame.copy()
+                    frame = overlay.copy()
                     cv2.putText(frame, f"{controller.state.value}: {controller.message}",
                                 (12, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 1)
                     cv2.putText(frame, f"candidate={status.candidate_box_id} held={status.held_box_id} "
                                 f"placed={len(status.placed_box_ids)} | P pause C resume R reset Q quit",
                                 (12, 52), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1)
-                    cv2.imshow("Gesture robot", frame)
-                    pressed = cv2.waitKey(1) & 0xFF
-                    if pressed != 255:
-                        key = chr(pressed).lower()
+                    if show_overlay:
+                        cv2.imshow("Gesture robot", frame)
+                        pressed = cv2.waitKey(1) & 0xFF
+                        if pressed != 255:
+                            key = chr(pressed).lower()
+                    if (bridge is not None and overlay is not last_camera_overlay
+                            and tick - last_camera_publish >= 1 / 15):
+                        ok, encoded = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 78])
+                        if ok:
+                            bridge.publish_camera_frame(encoded.tobytes())
+                            last_camera_overlay = overlay
+                            last_camera_publish = tick
             if key in ("q", "\x1b"):
                 break
             if key == "r":
@@ -82,7 +93,6 @@ def run(vision, simulation, metrics=None, config: Config = DEFAULT_CONFIG,
                 controller.request_resume()
             elif key == "t" and config.control_mode == "pick" and metrics is not None and hasattr(metrics, "begin_trial"):
                 metrics.begin_trial(tick)
-            sample = vision.latest_sample()
             vision_error = getattr(vision, "error", None)
             if vision_error and vision_error != last_vision_error:
                 print(f"Vision paused: {vision_error}")
@@ -150,7 +160,7 @@ def main():
     web_group = parser.add_mutually_exclusive_group()
     web_group.add_argument("--web", dest="web", action="store_true", help="Serve Three.js mirror at localhost")
     web_group.add_argument("--no-web", dest="web", action="store_false", help="Do not open the 3D browser view")
-    parser.set_defaults(web=False)
+    parser.set_defaults(web=True)
     parser.add_argument("--gui", action="store_true", help="Also show the native PyBullet window")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--demo", action="store_true", help="Synthetic hand input with REAL PyBullet physics")
@@ -181,7 +191,13 @@ def main():
     try:
         if args.web:
             from simulation.serve import IntegrationBridge
-            bridge = IntegrationBridge(args.port)
+            try:
+                bridge = IntegrationBridge(args.port)
+            except OSError as exc:
+                if args.port == 0:
+                    raise
+                print(f"Port {args.port} is occupied ({exc}); using an available local port.")
+                bridge = IntegrationBridge(0)
             url = f"http://127.0.0.1:{bridge.server.server_port}"
             print(f"Three.js physics mirror: {url}")
             webbrowser.open(url)

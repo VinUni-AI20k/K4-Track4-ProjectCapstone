@@ -74,6 +74,29 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/camera.jpg":
+            bridge = getattr(self.server, "bridge", None)
+            if bridge is None:
+                self._json(404, {"error": "camera preview requires integrated mode"})
+                return
+            try:
+                after = int(parse_qs(parsed.query).get("after", ["0"])[0])
+            except ValueError:
+                self._json(400, {"error": "after must be an integer"})
+                return
+            image = bridge.camera_frame(after)
+            if image is None:
+                self.send_response(204)
+                self.end_headers()
+                return
+            sequence, jpeg = image
+            self.send_response(200)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Length", str(len(jpeg)))
+            self.send_header("X-Frame-Id", str(sequence))
+            self.end_headers()
+            self.wfile.write(jpeg)
+            return
         if parsed.path == "/api/state":
             bridge = getattr(self.server, "bridge", None)
             self._json(200, bridge.snapshot() if bridge else {"active": False})
@@ -151,6 +174,8 @@ class IntegrationBridge:
         self._state = {"active": True, "ready": False}
         self._key = None
         self._revision = 0
+        self._camera_sequence = 0
+        self._camera_jpeg = None
         self.server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
         self.server.daemon_threads = True
         self.server.bridge = self
@@ -165,6 +190,17 @@ class IntegrationBridge:
     def snapshot(self):
         with self._lock:
             return dict(self._state)
+
+    def publish_camera_frame(self, jpeg):
+        with self._lock:
+            self._camera_sequence += 1
+            self._camera_jpeg = jpeg
+
+    def camera_frame(self, after=0):
+        with self._lock:
+            if self._camera_jpeg is None or self._camera_sequence <= after:
+                return None
+            return self._camera_sequence, self._camera_jpeg
 
     def input(self, key):
         with self._lock:
