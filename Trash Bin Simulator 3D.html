@@ -79,7 +79,7 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
     </div>
     <div class="card">
       <h2>State từ perception</h2>
-      <textarea id="json" spellcheck="false">{"metal": 3, "paper": 2}</textarea>
+      <textarea id="json" spellcheck="false">{"plastic": 1, "other": 1}</textarea>
       <div class="row"><button class="primary" id="apply">Mở thùng theo state</button><button id="close">Đóng tất cả</button></div>
       <div class="presets" id="presets"></div>
       <label class="toggle"><input type="checkbox" id="auto" checked> Tự đóng nắp sau 5 giây</label>
@@ -111,12 +111,10 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
   if (!window.THREE) { sceneEl.insertAdjacentHTML("afterbegin", '<p style="padding:20px;color:#9fb">Không tải được three.js.</p>'); return; }
 
   var CONFIG = [
-    { key: "metal",   label: "Kim loại", accent: "#6ea8fe" },
-    { key: "paper",   label: "Giấy",     accent: "#f0b964" },
-    { key: "plastic", label: "Nhựa",     accent: "#45d6c4" },
-    { key: "organic", label: "Hữu cơ",   accent: "#6ddc8b" }
+    { key: "plastic", label: "Plastic", accent: "#45d6c4" },
+    { key: "other",   label: "Còn lại", accent: "#f0b964" }
   ];
-  var SPACING = 1.6, AUTO_CLOSE_MS = 5000, MAX_ITEMS = 5, OPEN_ANGLE = 1.9;
+  var SPACING = 2.0, AUTO_CLOSE_MS = 5000, MAX_ITEMS = 5, OPEN_ANGLE = 1.9;
   var logEl = $("log"), statusEl = $("status"), jsonEl = $("json"), autoEl = $("auto"), orbitEl = $("orbit"), hudEl = $("hud");
   var nodes = {}, closeTimer = null;
 
@@ -223,16 +221,7 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
   /* ---------- items ---------- */
   function makeItem(key) {
     var g = new THREE.Group(), r = 0.1;
-    if (key === "metal") {
-      var can = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.2, 22), mat(0xcdd5df, { metalness: 0.9, roughness: 0.25 }));
-      var band = new THREE.Mesh(new THREE.CylinderGeometry(0.0715, 0.0715, 0.09, 22), mat(0x4f86d9, { metalness: 0.6, roughness: 0.35 }));
-      g.add(can, band); g.userData.fin = [Math.PI / 2, 0, 1]; r = 0.07;
-    } else if (key === "paper") {
-      var geo = new THREE.IcosahedronGeometry(0.13, 1), p = geo.attributes.position;
-      for (var i = 0; i < p.count; i++) { var s = 0.85 + Math.random() * 0.3; p.setXYZ(i, p.getX(i) * s, p.getY(i) * s, p.getZ(i) * s); }
-      geo.computeVertexNormals();
-      g.add(new THREE.Mesh(geo, mat(0xf1ead9, { roughness: 1, flatShading: true }))); r = 0.12;
-    } else if (key === "plastic") {
+    if (key === "plastic") {
       var bottle = new THREE.Mesh(new THREE.LatheGeometry([V(0.001, 0), V(0.055, 0), V(0.065, 0.03), V(0.065, 0.17), V(0.042, 0.23), V(0.024, 0.26), V(0.024, 0.3)], 20),
         mat(0x45d6c4, { transparent: true, opacity: 0.72, roughness: 0.15, side: THREE.DoubleSide }));
       var cap = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.04, 14), mat(0x1c8f84));
@@ -240,10 +229,9 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
       g.children.forEach(function (c) { c.position.y -= 0.15; });
       g.userData.fin = [Math.PI / 2, 0, 1]; r = 0.065;
     } else {
-      var apple = new THREE.Mesh(new THREE.SphereGeometry(0.11, 22, 16), mat(0xd9483f, { roughness: 0.4 }));
-      apple.scale.y = 0.9;
-      var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.05, 6), mat(0x5b3a1e));
-      stem.position.y = 0.11; g.add(apple, stem); r = 0.1;
+      var can = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.2, 22), mat(0xcdd5df, { metalness: 0.9, roughness: 0.25 }));
+      var band = new THREE.Mesh(new THREE.CylinderGeometry(0.0715, 0.0715, 0.09, 22), mat(0xf0b964, { metalness: 0.6, roughness: 0.35 }));
+      g.add(can, band); g.userData.fin = [Math.PI / 2, 0, 1]; r = 0.07;
     }
     g.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
     g.userData.r = r;
@@ -307,13 +295,21 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
 
   function normalize(state) {
     var opens = [], unknown = [];
+    var s = Object.assign({}, state);
+    if (s["waste"] !== undefined && s["other"] === undefined) s["other"] = s["waste"];
+    if (s["còn lại"] !== undefined && s["other"] === undefined) s["other"] = s["còn lại"];
+    if (s["con_lai"] !== undefined && s["other"] === undefined) s["other"] = s["con_lai"];
+    if (s["nhựa"] !== undefined && s["plastic"] === undefined) s["plastic"] = s["nhựa"];
+
     CONFIG.forEach(function (b) {
-      var raw = state[b.key], v = raw == null ? 0 : Number(raw);
+      var raw = s[b.key], v = raw == null ? 0 : Number(raw);
       if (!isFinite(v) || v < 0) v = 0;
       v = Math.floor(v);
       if (v > 0) opens.push({ key: b.key, n: v });
     });
-    Object.keys(state).forEach(function (k) { if (!nodes[k]) unknown.push(k); });
+    Object.keys(state).forEach(function (k) {
+      if (!nodes[k] && !["waste", "còn lại", "con_lai", "nhựa", "other", "plastic"].includes(k)) unknown.push(k);
+    });
     return { opens: opens, unknown: unknown };
   }
 
@@ -322,7 +318,7 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
       try { state = JSON.parse(state); } catch (e) { log("err", "JSON lỗi.", e.message); return false; }
     }
     if (!state || typeof state !== "object" || Array.isArray(state)) {
-      log("err", "State không hợp lệ.", "cần object như {metal:3,paper:2}"); return false;
+      log("err", "State không hợp lệ.", "cần object như {plastic:1,other:1}"); return false;
     }
     var t0 = performance.now(), res = normalize(state);
     CONFIG.forEach(function (b) {
@@ -342,11 +338,11 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
   }
 
   var PRESETS = [
-    { label: '{"metal":3,"paper":2}', state: { metal: 3, paper: 2 } },
-    { label: "1 chai nhựa", state: { plastic: 1 } },
-    { label: "lon + hộp", state: { metal: 4, paper: 2 } },
-    { label: "cả 4 loại", state: { metal: 2, paper: 3, plastic: 1, organic: 2 } },
-    { label: "ca lỗi: khóa lạ", state: { metal: 1, glass: 2 } }
+    { label: '{"plastic":1}', state: { plastic: 1 } },
+    { label: '{"other":1}', state: { other: 1 } },
+    { label: "Cả 2 thùng", state: { plastic: 1, other: 1 } },
+    { label: "Chai nhựa x3", state: { plastic: 3 } },
+    { label: "Rác khác x3", state: { other: 3 } }
   ];
   PRESETS.forEach(function (p) {
     var bt = document.createElement("button");

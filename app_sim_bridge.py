@@ -41,12 +41,12 @@ class PerceptionState:
 
 state = PerceptionState()
 
-# Ánh xạ từ nhãn detector sang key của Simulator (metal, paper, plastic, organic)
+# Ánh xạ từ nhãn detector sang key của Simulator (plastic, other)
 MATERIAL_TO_SIM_KEY = {
     "Plastic": "plastic",
-    "Metal": "metal",
-    "Paper": "paper",
-    "Organic": "organic"
+    "Còn lại": "other",
+    "Other": "other",
+    "Waste": "other"
 }
 
 def camera_perception_loop():
@@ -125,12 +125,14 @@ def camera_perception_loop():
             cls_name = det["material_class"]
             conf = det["confidence"]
 
-            # Màu theo loại vật liệu giống màu 3D của Leader
-            color = (69, 214, 196) if cls_name == "Plastic" else (
-                (254, 168, 110) if cls_name == "Metal" else (
-                    (100, 185, 240) if cls_name == "Paper" else (139, 220, 109)
-                )
-            )
+            # Màu theo loại vật liệu: Xanh ngọc cho Plastic, Vàng cam cho Còn lại, Xám nhạt cho Person
+            if cls_name == "Plastic":
+                color = (69, 214, 196)  # Xanh ngọc
+            elif cls_name == "Còn lại":
+                color = (100, 185, 240)  # Vàng cam
+            else:
+                color = (180, 180, 180)  # Xám cho Person / vật thể khác
+
             cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
             label = f"{cls_name} {conf:.2f}"
             cv2.putText(annotated, label, (x1, max(20, y1 - 8)),
@@ -169,17 +171,14 @@ def np_synthetic_frame(cycle):
     cv2.putText(canvas, "[ SYNTHETIC WEBCAM FEED ]", (50, 80),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (180, 180, 180), 2)
     
-    # Chu kỳ 80 frame đổi loại rác 1 lần
-    mode = (cycle // 80) % 3
+    # Chu kỳ 80 frame đổi loại rác 1 lần (Plastic <-> Còn lại)
+    mode = (cycle // 80) % 2
     if mode == 0:
         cv2.circle(canvas, (320, 240), 50, (69, 214, 196), -1)
         cv2.putText(canvas, "Simulated Plastic Bottle", (220, 320), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-    elif mode == 1:
-        cv2.circle(canvas, (320, 240), 45, (254, 168, 110), -1)
-        cv2.putText(canvas, "Simulated Metal Can", (230, 320), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
     else:
-        cv2.rectangle(canvas, (260, 190), (380, 290), (100, 185, 240), -1)
-        cv2.putText(canvas, "Simulated Paper Box", (230, 320), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.circle(canvas, (320, 240), 45, (100, 185, 240), -1)
+        cv2.putText(canvas, "Simulated Waste Item (Con lai)", (190, 320), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
     return canvas
 

@@ -66,23 +66,32 @@ class WasteDetector:
         raw_path = model_path or os.getenv("YOLO_MODEL_PATH", "yolov8n.pt")
         self.model_path = self._sanitize_model_path(raw_path)
 
-        # 2. Bảng ánh xạ lớp COCO / Roboflow sang phân loại vật liệu VinFast & VinRobotics
+        # 2. Bảng ánh xạ lớp COCO sang 2 phân loại chính: Plastic và Còn lại
+        self.plastic_classes = {"bottle", "cup", "plastic"}
+        self.ignore_classes = {"person"}  # Bỏ qua người để webcam không tự động mở thùng rác liên tục
+
         self.material_mapping = {
             "bottle": "Plastic",
             "cup": "Plastic",
             "plastic": "Plastic",
-            "can": "Metal",
-            "metal": "Metal",
-            "knife": "Metal",
-            "fork": "Metal",
-            "book": "Paper",
-            "paper": "Paper",
-            "cardboard": "Paper",
-            "glass": "Glass",
-            "wine glass": "Glass",
-            "cell phone": "E-Waste",
-            "crushed": "Defective_Part",
-            "defect": "Defective_Part"
+            "can": "Còn lại",
+            "metal": "Còn lại",
+            "knife": "Còn lại",
+            "fork": "Còn lại",
+            "spoon": "Còn lại",
+            "bowl": "Còn lại",
+            "book": "Còn lại",
+            "paper": "Còn lại",
+            "cardboard": "Còn lại",
+            "glass": "Còn lại",
+            "wine glass": "Còn lại",
+            "cell phone": "Còn lại",
+            "crushed": "Còn lại",
+            "defect": "Còn lại",
+            "banana": "Còn lại",
+            "apple": "Còn lại",
+            "sandwich": "Còn lại",
+            "orange": "Còn lại"
         }
 
         # 3. Nạp model YOLOv8 an toàn
@@ -191,8 +200,14 @@ class WasteDetector:
                     cls_id = int(box.cls[0])
                     raw_cls_name = self.model.names[cls_id].lower()
 
-                    # Ánh xạ về nhóm vật liệu
-                    material = self.material_mapping.get(raw_cls_name, raw_cls_name.capitalize())
+                    # Phân loại chỉ 2 option: Plastic và Còn lại (riêng Person được giữ nguyên để không nhầm thành rác)
+                    if raw_cls_name in self.ignore_classes:
+                        material = "Person"
+                    elif raw_cls_name in self.plastic_classes:
+                        material = "Plastic"
+                    else:
+                        material = "Còn lại"
+
                     cx = int((x1 + x2) / 2)
                     cy = int((y1 + y2) / 2)
 
@@ -223,12 +238,12 @@ class WasteDetector:
             
             # Màu xanh lục (Plastic trong Simulator)
             mask_green = cv2.inRange(hsv, (35, 70, 70), (85, 255, 255))
-            # Màu vàng/kim loại (Metal trong Simulator)
+            # Màu vàng/kim loại (Còn lại trong Simulator)
             mask_yellow = cv2.inRange(hsv, (20, 100, 100), (35, 255, 255))
 
             color_configs = [
                 ("Plastic", mask_green, 0.92),
-                ("Metal", mask_yellow, 0.88)
+                ("Còn lại", mask_yellow, 0.88)
             ]
 
             for mat_name, mask, conf in color_configs:
