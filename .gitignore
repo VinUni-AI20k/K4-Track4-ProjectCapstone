@@ -7,3 +7,4 @@ results/colab/
 .env
 colab/
 docs/COLAB.md
+node_modules/
