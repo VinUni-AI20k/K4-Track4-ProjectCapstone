@@ -29,7 +29,15 @@ def main():
     # 1. Khởi tạo Simulator của Leader và 4 Module của 4 thành viên
     sim = WasteRobotSimulator()
     detector = WasteDetector()
-    geometry_proc = GeometryCoordinateTransformer()
+    # Calibration DEMO của Member 2, KHÔNG phải calibration của simulator thật.
+    geometry_proc = GeometryCoordinateTransformer(
+        fx=550.0, fy=550.0, cx=320.0, cy=240.0,
+        image_size=(640, 480),
+        camera_to_world=[[1, 0, 0, 0], [0, -1, 0, 0.35], [0, 0, -1, 0.25], [0, 0, 0, 1]],
+        plane_point=(0, 0, -0.1),
+        workspace_limits=((-0.25, 0.25), (0.15, 0.50), (-0.11, 0.1)),
+        clearance_m=0.05,
+    )
     tracker = WasteTemporalUncertaintyTracker(window_size=5, min_consensus=4)
     controller = ClosedLoopController(cooldown_seconds=2.0)
     visualizer = WasteVisualizer(log_path="logs/sim_trace.csv")
@@ -50,10 +58,15 @@ def main():
         detections = detector.detect(frame)
 
         # === 2. THÀNH VIÊN 2: 3D CAMERA GEOMETRY & TỌA ĐỘ GẮP ===
-        geometric_items = geometry_proc.process(detections)
-
         # === 3. THÀNH VIÊN 3: TEMPORAL KALMAN & ĐÁNH GIÁ BẤT ĐỊNH ===
-        tracked_state = tracker.update(geometric_items, sim_ground_truth=sim_gt)
+        try:
+            geometric_items = geometry_proc.process(detections)
+            tracked_state = tracker.update(geometric_items, sim_ground_truth=sim_gt)
+        except ValueError as exc:
+            # Member 2: pixel/confidence không hợp lệ -> giữ an toàn, không gắp
+            tracker.reset()
+            tracked_state = {"target_object": None, "should_trigger_pick": False}
+            print(f"[HOLD] Geometry từ chối frame #{frame_id}: {exc}")
 
         # === 4. THÀNH VIÊN 4: CLOSED-LOOP ACTUATOR BRIDGE & GỬI LỆNH VỀ CHO SIM ===
         action_state = controller.dispatch_action(sim, tracked_state)

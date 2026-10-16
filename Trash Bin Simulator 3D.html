@@ -409,7 +409,42 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
     requestAnimationFrame(frame);
   }
 
-  window.TrashBins = { config: CONFIG, setState: function (s) { return setState(s, "api"); }, closeAll: closeAll, setView: setView };
+  /* ---------- Member 2: read-only geometry bridge ---------- */
+  function projectWorldPoint(point) {
+    if (!Array.isArray(point) || point.length !== 3 || !point.every(Number.isFinite)) {
+      throw new Error("point must be three finite scene coordinates");
+    }
+    camera.updateMatrixWorld(true);
+    var p = new THREE.Vector3(point[0], point[1], point[2]).project(camera);
+    var inView = p.z >= -1 && p.z <= 1 && p.x >= -1 && p.x < 1 && p.y > -1 && p.y <= 1;
+    return {
+      scene_point: point.slice(),
+      pixel_center: [(p.x + 1) * cvs.width / 2, (1 - p.y) * cvs.height / 2],
+      in_view: inView
+    };
+  }
+
+  function getGeometrySnapshot(referencePoints) {
+    camera.updateMatrixWorld(true);
+    return {
+      schema_version: 1,
+      source: "threejs",
+      timestamp_ms: performance.now(),
+      pixel_space: "canvas_drawing_buffer",
+      image_size: [cvs.width, cvs.height],
+      projection_matrix: camera.projectionMatrix.toArray(),
+      camera_matrix_world: camera.matrixWorld.toArray(),
+      scene_up_axis: "Y",
+      units: "scene_units_not_calibrated_metres",
+      reference_points: (referencePoints || []).map(projectWorldPoint)
+    };
+  }
+
+  window.TrashBins = {
+    config: CONFIG, setState: function (s) { return setState(s, "api"); },
+    closeAll: closeAll, setView: setView,
+    getGeometrySnapshot: getGeometrySnapshot, projectWorldPoint: projectWorldPoint
+  };
   closeAll();
   log("ok", "Sẵn sàng.", "nhận state từ perception và mở nắp tương ứng");
   frame();

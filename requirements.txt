@@ -1,6 +1,6 @@
 # Core Runtime Dependencies
 opencv-python>=4.8.0.0
-numpy>=1.23.0
+numpy>=1.26,<3
 ultralytics>=8.0.0
 filterpy>=1.4.5
 python-dotenv>=1.0.0
