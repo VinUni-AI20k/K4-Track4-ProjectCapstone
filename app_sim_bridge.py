@@ -138,13 +138,16 @@ def camera_perception_loop():
             cv2.putText(annotated, label, (x1, max(20, y1 - 8)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
 
-            sim_key = MATERIAL_TO_SIM_KEY.get(cls_name)
-            if sim_key and conf >= 0.40:
-                detected_event = {
-                    "label": cls_name,
-                    "conf": conf,
-                    "state": {sim_key: 1}
-                }
+            # Chỉ kích hoạt mở thùng rác cho vật phẩm rác thực thụ (Plastic hoặc Còn lại)
+            # Tuyệt đối BỎ QUA NGƯỜI (Person) và đồ dùng văn phòng/nội thất
+            if cls_name in ["Plastic", "Còn lại"] and conf >= 0.45:
+                sim_key = MATERIAL_TO_SIM_KEY.get(cls_name)
+                if sim_key:
+                    detected_event = {
+                        "label": cls_name,
+                        "conf": conf,
+                        "state": {sim_key: 1}
+                    }
 
         # Vẽ thanh HUD FPS & Latency
         cv2.rectangle(annotated, (10, 10), (280, 50), (20, 20, 20), -1)

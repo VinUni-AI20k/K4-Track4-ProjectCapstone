@@ -68,30 +68,28 @@ class WasteDetector:
 
         # 2. Bảng ánh xạ lớp COCO sang 2 phân loại chính: Plastic và Còn lại
         self.plastic_classes = {"bottle", "cup", "plastic"}
-        self.ignore_classes = {"person"}  # Bỏ qua người để webcam không tự động mở thùng rác liên tục
+        
+        # Các lớp vật liệu rác khác (Còn lại)
+        self.waste_classes = {
+            "can", "metal", "knife", "fork", "spoon", "bowl",
+            "book", "paper", "cardboard",
+            "glass", "wine glass",
+            "cell phone", "crushed", "defect",
+            "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake",
+            "scissors", "toothbrush", "box"
+        }
+
+        # Các lớp Người và Bối cảnh văn phòng/nhà ở (TUYỆT ĐỐI KHÔNG BAO GIỜ PHÂN LOẠI LÀ RÁC)
+        self.ignore_classes = {
+            "person", "human", "face",
+            "chair", "couch", "sofa", "bed", "dining table", "desk", "bench",
+            "tv", "laptop", "monitor", "screen", "keyboard", "mouse", "remote",
+            "backpack", "handbag", "tie", "suitcase", "clock", "potted plant", "vase"
+        }
 
         self.material_mapping = {
-            "bottle": "Plastic",
-            "cup": "Plastic",
-            "plastic": "Plastic",
-            "can": "Còn lại",
-            "metal": "Còn lại",
-            "knife": "Còn lại",
-            "fork": "Còn lại",
-            "spoon": "Còn lại",
-            "bowl": "Còn lại",
-            "book": "Còn lại",
-            "paper": "Còn lại",
-            "cardboard": "Còn lại",
-            "glass": "Còn lại",
-            "wine glass": "Còn lại",
-            "cell phone": "Còn lại",
-            "crushed": "Còn lại",
-            "defect": "Còn lại",
-            "banana": "Còn lại",
-            "apple": "Còn lại",
-            "sandwich": "Còn lại",
-            "orange": "Còn lại"
+            **{k: "Plastic" for k in self.plastic_classes},
+            **{k: "Còn lại" for k in self.waste_classes}
         }
 
         # 3. Nạp model YOLOv8 an toàn
@@ -200,13 +198,16 @@ class WasteDetector:
                     cls_id = int(box.cls[0])
                     raw_cls_name = self.model.names[cls_id].lower()
 
-                    # Phân loại chỉ 2 option: Plastic và Còn lại (riêng Person được giữ nguyên để không nhầm thành rác)
-                    if raw_cls_name in self.ignore_classes:
-                        material = "Person"
+                    # Phân loại an toàn:
+                    # 1. Người và nội thất/thiết bị văn phòng -> giữ nguyên tên gốc, TUYỆT ĐỐI KHÔNG gán là rác
+                    if raw_cls_name in self.ignore_classes or raw_cls_name == "person":
+                        material = raw_cls_name.capitalize()
                     elif raw_cls_name in self.plastic_classes:
                         material = "Plastic"
-                    else:
+                    elif raw_cls_name in self.waste_classes:
                         material = "Còn lại"
+                    else:
+                        material = raw_cls_name.capitalize()
 
                     cx = int((x1 + x2) / 2)
                     cy = int((y1 + y2) / 2)
