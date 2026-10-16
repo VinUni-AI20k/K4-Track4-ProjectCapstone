@@ -12,11 +12,15 @@ Security & Robustness:
 """
 
 import os
+import sys
 import time
 import logging
 from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 import cv2
+
+# Loại bỏ các gói xung đột trong AppData Roaming để dùng đúng PyTorch + Torchvision của Anaconda
+sys.path = [p for p in sys.path if "AppData\\Roaming\\Python" not in p and "AppData/Roaming/Python" not in p]
 
 # Cấu hình logging
 logger = logging.getLogger("WasteDetector")

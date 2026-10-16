@@ -51,12 +51,41 @@ MATERIAL_TO_SIM_KEY = {
 
 def camera_perception_loop():
     """Luồng chạy ngầm đọc camera và suy luận YOLO liên tục."""
-    cap = cv2.VideoCapture(0)
-    using_synthetic = False
+    cap = None
+    cam_name = "None"
+    
+    # 1. Quét tìm webcam thật trên Windows (Ưu tiên DirectShow cv2.CAP_DSHOW)
+    for idx in [0, 1]:
+        test_cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
+        if test_cap.isOpened():
+            ret, test_frame = test_cap.read()
+            if ret and test_frame is not None and test_frame.size > 0:
+                cap = test_cap
+                cam_name = f"Webcam #{idx} (DirectShow)"
+                break
+            test_cap.release()
 
-    if not cap.isOpened():
-        print("[CAMERA] Không tìm thấy Webcam 0. Kích hoạt camera mô phỏng Synthetic Frame để kiểm thử!")
-        using_synthetic = True
+    # 2. Thử tiếp backend mặc định nếu DirectShow chưa được
+    if cap is None:
+        for idx in [0, 1]:
+            test_cap = cv2.VideoCapture(idx)
+            if test_cap.isOpened():
+                ret, test_frame = test_cap.read()
+                if ret and test_frame is not None and test_frame.size > 0:
+                    cap = test_cap
+                    cam_name = f"Webcam #{idx} (Default)"
+                    break
+                test_cap.release()
+
+    using_synthetic = (cap is None)
+    if not using_synthetic:
+        # Cấu hình độ phân giải chuẩn
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        print(f"[CAMERA] >>> KẾT NỐI THÀNH CÔNG: {cam_name}")
+        print("[CAMERA] >>> ĐANG ĐỌC VIDEO THẬT TỪ WEBCAM! Hãy giơ chai nước hoặc lon nước trước camera.")
+    else:
+        print("[CAMERA] [CẢNH BÁO] Không tìm thấy webcam vật lý nào. Chuyển sang Synthetic Animation.")
 
     frame_id = 0
     prev_time = time.time()
