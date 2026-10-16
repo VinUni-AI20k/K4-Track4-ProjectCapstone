@@ -185,8 +185,8 @@ def np_synthetic_frame(cycle):
 
 @app.route("/")
 def index():
-    """Phục vụ file 3D Trash Bin Simulator của Leader."""
-    sim_path = os.path.join(os.path.dirname(__file__), "simulator.html")
+    """Phục vụ file 3D Trash Bin Simulator của Leader (Three.js WebGL)."""
+    sim_path = os.path.join(os.path.dirname(__file__), "Trash Bin Simulator 3D.html")
     return send_file(sim_path)
 
 @app.route("/video_feed")

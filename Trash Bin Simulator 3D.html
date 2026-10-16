@@ -58,6 +58,25 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
       <p class="sub">Tầng actuator của hệ thống. Perception phát ra một <b>state</b>; loại nào có số &gt; 0 thì nắp thùng đó mở và rác rơi vào bên trong.</p>
       <span class="chip">camera → state → servo nắp thùng</span>
     </div>
+
+    <!-- AI PERCEPTION LIVE FEED CARD (MEMBER 1) -->
+    <div class="card" id="ai-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h2>Camera AI Perception (YOLOv8)</h2>
+        <span id="ai-badge" style="font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(109,220,139,.15);color:#6ddc8b;border:1px solid rgba(109,220,139,.3);">● AI Live</span>
+      </div>
+      <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#000;min-height:160px;display:flex;align-items:center;justify-content:center;">
+        <img id="ai-stream" src="/video_feed" style="width:100%;display:block;" onerror="this.style.display='none';document.getElementById('ai-fallback').style.display='block';">
+        <div id="ai-fallback" style="display:none;padding:18px;text-align:center;color:var(--muted);font-size:12px;">
+          Đang chờ kết nối Python Backend...<br>
+          <code style="font-size:11px;color:#9ec6ff;display:inline-block;margin-top:6px;">python app_sim_bridge.py</code>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12.5px;color:var(--muted);">
+        <span id="detected-label">Chưa phát hiện rác</span>
+        <label class="toggle" style="margin:0;"><input type="checkbox" id="ai-auto-trigger" checked> Tự mở nắp</label>
+      </div>
+    </div>
     <div class="card">
       <h2>State từ perception</h2>
       <textarea id="json" spellcheck="false">{"metal": 3, "paper": 2}</textarea>
@@ -448,6 +467,43 @@ label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
   closeAll();
   log("ok", "Sẵn sàng.", "nhận state từ perception và mở nắp tương ứng");
   frame();
+
+  // --- REAL-TIME AI PERCEPTION BRIDGE (MEMBER 1) ---
+  (function initAiBridge() {
+    if (window.location.protocol.indexOf("http") !== 0) return;
+    var aiBadge = document.getElementById("ai-badge");
+    var detectedLabel = document.getElementById("detected-label");
+    var aiAutoTrigger = document.getElementById("ai-auto-trigger");
+    var lastTrigger = 0;
+
+    try {
+      var source = new EventSource("/api/events");
+      source.onopen = function () {
+        if (aiBadge) { aiBadge.textContent = "● AI Connected"; aiBadge.style.color = "#6ddc8b"; }
+        log("ok", "AI Perception:", "Đã kết nối luồng YOLOv8 thời gian thực.");
+      };
+      source.onmessage = function (e) {
+        try {
+          var payload = JSON.parse(e.data);
+          if (detectedLabel && payload.label) {
+            detectedLabel.innerHTML = "Nhận diện: <b>" + payload.label + "</b> (" + (payload.conf * 100).toFixed(0) + "%)";
+          }
+          if (aiAutoTrigger && aiAutoTrigger.checked && payload.state) {
+            var now = performance.now();
+            if (now - lastTrigger > 2000) {
+              lastTrigger = now;
+              var jsonEl = document.getElementById("json");
+              if (jsonEl) jsonEl.value = JSON.stringify(payload.state);
+              setState(payload.state, "ai-perception");
+            }
+          }
+        } catch (err) {}
+      };
+      source.onerror = function () {
+        if (aiBadge) { aiBadge.textContent = "○ Standalone"; aiBadge.style.color = "var(--muted)"; }
+      };
+    } catch (e) {}
+  })();
 })();
 </script>
 </body>
