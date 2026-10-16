@@ -1,8 +1,7 @@
-"""Shared defaults in meters/seconds. TV3 must validate geometry with its robot.
+"""Shared Z-up meters/seconds; workspace checked with the bundled Panda robot.
 
-The initial layout is a proposal for a downward-facing tabletop arm, not a
-claim that IK has already been verified. Heights refer to the EE link origin;
-TV3 must account for its tool offset and the box attachment transform.
+Heights refer to panda_grasptarget (link 11). The virtual grasp center is
+grasp_offset meters below that link. A different robot needs new IK checks.
 """
 
 from dataclasses import dataclass
@@ -23,9 +22,9 @@ class Config:
     home_xyz: Vec3 = (0.5, 0.0, 0.35)
     downward_euler: Vec3 = (pi, 0.0, 0.0)
     boxes: tuple[tuple[str, Vec3, Vec3], ...] = (
-        ("red", (0.40, -0.18, 0.025), (1.0, 0.15, 0.15)),
-        ("green", (0.50, -0.18, 0.025), (0.15, 0.8, 0.2)),
-        ("blue", (0.60, -0.18, 0.025), (0.15, 0.3, 1.0)),
+        ("red", (0.40, -0.18, 0.030), (1.0, 0.15, 0.15)),
+        ("green", (0.45, -0.18, 0.030), (0.15, 0.8, 0.2)),
+        ("blue", (0.50, -0.18, 0.030), (0.15, 0.3, 1.0)),
     )
     bin_center: tuple[float, float] = (0.5, 0.18)
     bin_half_size: tuple[float, float] = (0.12, 0.065)
@@ -45,6 +44,21 @@ class Config:
     placement_settle_s: float = 0.30
     max_control_dt: float = 0.05
     loop_hz: float = 60.0
+    camera_source: int | str = 0
+    hand_model: str = "models/hand_landmarker.task"
+    hand_side: str = "Right"
+    simulation_gui: bool = True
+    grasp_offset: float = 0.05
+    candidate_distance: float = 0.04
+    control_mode: str = "arm"
+    arm_visibility: float = 0.65
+    arm_calibration_s: float = 0.6
+    arm_gain: float = 0.55
+    arm_workspace_x: tuple[float, float] = (0.20, 0.65)
+    arm_workspace_y: tuple[float, float] = (-0.35, 0.35)
+    arm_workspace_z: tuple[float, float] = (0.075, 0.65)
+    arm_reach: float = 0.70
+    arm_joint_speed: float = 1.2
 
     def __post_init__(self):
         if not 0 <= self.pinch_close < self.pinch_open:

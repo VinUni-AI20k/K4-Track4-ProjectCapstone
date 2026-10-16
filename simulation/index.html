@@ -37,6 +37,12 @@
 
       <button class="demo-button" id="demo-button" type="button"><span class="play-icon">▶</span><span><b>Chạy demo gắp hàng</b><small>Phát lại một lượt gắp mẫu</small></span><span class="button-arrow">↗</span></button>
       <button class="reset-button" id="reset-button" type="button">Đưa robot về vị trí chờ <span>↺</span></button>
+      <div id="integration-controls" hidden>
+        <button class="reset-button" data-input="p" type="button">Tạm dừng (P)</button>
+        <button class="reset-button" data-input="c" type="button">Xác nhận tiếp tục (C)</button>
+        <button class="reset-button" data-input="t" type="button">Bắt đầu lượt đo (T)</button>
+        <button class="reset-button" data-input="q" type="button">Kết thúc phiên (Q)</button>
+      </div>
 
       <div class="divider"></div>
       <div class="section-label api-label">ĐIỂM NHẬN LỆNH <span class="api-dot"></span></div>
@@ -44,7 +50,7 @@
       <div class="api-note">Tọa độ mục tiêu tính bằng mét trong hệ trục mô phỏng.</div>
       <button class="contract-toggle" id="contract-toggle" type="button" aria-expanded="false">Xem định dạng lệnh <span>＋</span></button>
       <pre class="contract" id="contract" hidden>{
-  "target": { "x": -1.82, "y": 0.99, "z": -1.48 },
+  "target": { "x": -1.3, "y": 0.85, "z": -1.1 },
   "grip": 1
 }</pre>
     </aside>

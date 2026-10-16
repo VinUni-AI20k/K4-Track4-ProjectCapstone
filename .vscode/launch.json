@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Robot Arm Demo (webcam + 3D)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": ["--mode", "arm", "--headless", "--web"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

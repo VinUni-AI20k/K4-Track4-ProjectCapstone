@@ -1,23 +1,37 @@
-# K4 Track 4 Project Capstone — Vin Perception Hackathon
+# Điều khiển robot gắp hàng bằng cánh tay thật
 
-Trang đề bài hackathon cuối khóa Track 4 (Computer Vision & Robotics): 2 giờ build, 10 phút demo mỗi team, đề tài gắn với hệ sinh thái Vin.
+Demo dùng webcam laptop để nhận diện vai, khuỷu, cổ tay và các keypoint bàn tay. Panda trong PyBullet chuyển động theo cánh tay; người vận hành đưa đầu gắp tới hộp trên băng chuyền, chụm ngón để gắp rồi đưa hộp vào giỏ và mở tay để thả.
 
-- `index.html`: trang đề bài (một file, không cần build). Mở trực tiếp bằng trình duyệt.
+## Chạy trên Windows
 
-Nội dung gồm hướng đề tài gợi ý, bốn yêu cầu của mỗi demo, bảy trụ cột Track 4, công cụ gợi ý, thang điểm, lịch trình, checklist trước demo và FAQ. Ngày giờ, địa điểm, giám khảo, giải thưởng sẽ được ban tổ chức cập nhật.
-
-## Triển khai hệ thống
-
-- `HACKATHON_PLAN.md`: phạm vi MVP, phân công, kiến trúc và tiêu chí nghiệm thu.
-- `TV1_HANDOFF.md`: giao diện tích hợp, hướng dẫn chạy và giới hạn kiểm chứng phần TV1.
-- `contracts.py`, `config.py`, `control.py`, `main.py`: hợp đồng, cấu hình, điều khiển và vòng lặp tích hợp.
-
-Chạy độc lập phần TV1 bằng Python 3.11, không cần dependency ngoài:
+Mở PowerShell tại thư mục gốc repo:
 
 ```powershell
-.venv/Scripts/python.exe -m dev.run_control
-.venv/Scripts/python.exe -m unittest discover -s tests -v
+./setup-demo.ps1
+./run-demo.ps1
 ```
 
-Runner dùng dữ liệu tổng hợp. Chạy `main.py` với webcam/robot thật cần module
-`vision.py` của TV2 và `simulation.py` của TV3 theo giao diện trong tài liệu bàn giao.
+Lần đầu cần Internet để tải runtime Python, thư viện CPU, model MediaPipe và Three.js. Lệnh chạy mở cửa sổ webcam có keypoint cùng trang mô phỏng 3D theo trạng thái PyBullet. Cho phép ứng dụng truy cập webcam. Nếu camera khác là camera mặc định, dùng `./run-demo.ps1 --source 1`.
+
+## Thao tác
+
+1. Đứng đủ xa để webcam thấy vai, khuỷu, cổ tay và bàn tay phải. Nhấn **C**, giữ yên trong lúc hiệu chuẩn.
+2. Di chuyển cánh tay để đưa robot theo. Hộp gần đầu gắp được tô vàng.
+3. Đưa đầu gắp sát hộp rồi chụm ngón cái–trỏ. Nếu hộp chưa gắn, mở tay rồi thử lại khi đầu gắp chạm gần hộp hơn.
+4. Đưa cánh tay tới giỏ, hạ đầu gắp vào trong giỏ và mở ngón để thả.
+5. **P** tạm dừng; **C** hiệu chuẩn lại/tiếp tục; **R** đặt lại cảnh; **Q** hoặc **Esc** thoát.
+
+Mất keypoint vai, khuỷu, cổ tay hoặc bàn tay sẽ tạm dừng robot. Nếu đang mang hộp, liên kết được giữ để hộp không rơi. Chế độ theo cánh tay dùng độ sâu tương đối từ webcam và ánh xạ đã hiệu chuẩn; đây không phải phép đo khoảng cách 3D chính xác.
+
+## Thành phần
+
+- `arm_vision.py`: MediaPipe Holistic chạy CPU, keypoint cánh tay/bàn tay và pinch ratio.
+- `arm_control.py`: hiệu chuẩn vai, bám cổ tay/khuỷu, giới hạn workspace/tốc độ, pause khi mất tracking, điều khiển pinch.
+- `simulation/__init__.py`: PyBullet Panda, băng chuyền dừng, ba hộp, giỏ; chỉ gắn hộp khi khoảng cách vật lý đạt ngưỡng.
+- `simulation/serve.py` và `simulation/app.js`: trang Three.js hiển thị robot cùng trạng thái thực từ PyBullet.
+- `main.py`: điều phối camera, controller, simulator và HTTP viewer trên máy cục bộ.
+- `HACKATHON_PLAN.md`: mục tiêu MVP, phạm vi và tiêu chí demo.
+
+Chế độ mặc định là điều khiển toàn cánh tay có gắp/thả bằng pinch. Để dùng chế độ lòng bàn tay và chu trình pick/place có sẵn, chạy `./run-demo.ps1 --mode pick`. Có thể chọn tay trái với `--hand Left`, bật thêm GUI PyBullet bằng `--gui`, hoặc chạy không có trang trình duyệt bằng `--no-web`.
+
+Viewer lấy dữ liệu từ PyBullet và không gửi hình webcam qua HTTP. Trang 3D cần trình duyệt hỗ trợ WebGL và tải Three.js từ CDN. Mô phỏng vật lý và nhận diện ảnh chạy cục bộ trên CPU; tay gắp mô phỏng dùng liên kết cố định đơn giản, không mô phỏng chính xác lực kẹp.

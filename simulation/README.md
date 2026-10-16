@@ -1,50 +1,13 @@
-# Robot Pick Cell
+# Mô phỏng robot gắp hàng
 
-Môi trường 3D CPU-only cho demo robot gắp hàng từ băng chuyền vào giỏ. Băng chuyền dài đưa từng sản phẩm đi qua vùng gắp trong tầm với. Nếu không được gắp, sản phẩm tiếp tục tới mặt phẳng cuối nằm ngoài tầm với, dừng một giây rồi biến mất; sau đó sản phẩm kế tiếp mới được đưa ra. Nút demo giữ từng sản phẩm tại vùng gắp để robot hoàn tất chu trình mẫu. Phối màu dùng nền xám sáng, khung máy xanh teal, tay máy cam an toàn và thùng hàng nhiều màu để các bộ phận dễ phân biệt. Cảnh dùng Three.js theo cách dựng của thư mục `viz/` trong bài lab tham khảo; bridge điều khiển dùng Python standard library, không cần cài package Python.
+## Chế độ demo tích hợp
 
-## Chạy
+Từ gốc repo, chạy ./setup-demo.ps1 một lần rồi ./run-demo.ps1. Runner mở webcam overlay và viewer Three.js, còn PyBullet giữ trạng thái vật lý chuẩn. Mặc định robot được điều khiển bằng chuyển động vai–khuỷu–cổ tay; pinch gắp/thả hộp. Xem README_DEMO.md để biết thao tác và phím điều khiển.
 
-Từ gốc repo:
+Viewer có tại http://127.0.0.1:8765. Nó nhận snapshot từ PyBullet; lệnh HTTP không điều khiển robot. Webcam ở cửa sổ OpenCV cục bộ, không được gửi lên bridge.
 
-```powershell
-python simulation/serve.py
-```
+Tọa độ vật lý là mét, Z-up. Viewer đổi trục để hiển thị trên Three.js. Băng chuyền giữ ba hộp tại trạm gắp; attach chỉ thành công khi điểm gắp thực sự gần hộp. Hộp chỉ được tính vào giỏ sau khi được thả, nằm trọn trong giỏ và ổn định.
 
-Mở `http://127.0.0.1:8765`. Cần kết nối mạng để tải Three.js r128 và font giao diện từ CDN. Kéo chuột để xoay cảnh, cuộn để phóng to/thu nhỏ. Nút **Chạy demo gắp hàng** phát một chu trình mẫu; bộ mô phỏng vẫn ở trạng thái chờ lệnh để nhận điều khiển ngoài.
+## Viewer độc lập cũ
 
-## Gửi lệnh điều khiển
-
-`POST http://127.0.0.1:8765/api/command` với JSON. Gửi lại mỗi frame điều khiển (thường 15–30 Hz); simulation luôn dùng lệnh mới nhất.
-
-```json
-{
-  "target": { "x": -1.82, "y": 0.99, "z": -1.48 },
-  "grip": 1
-}
-```
-
-`target` là vị trí đầu kẹp sau khi bộ chuyển đổi keypoints ánh xạ sang hệ tọa độ thế giới của simulation, đơn vị mét. Trục `x` chạy dọc băng chuyền, `y` hướng lên từ mặt sàn và `z` là chiều sâu. Lệnh chỉ được nhận trong giới hạn tọa độ `x ∈ [-3.2, 3.2]`, `y ∈ [0.55, 3.0]`, `z ∈ [-2.5, 2.5]` và bán kính với vai robot `(0, 1.22, 0)` không quá `2.62 m`. Tâm vùng gắp nằm gần `(-1.82, 0.99, -1.48)`; item đi qua vùng này trước khi tới mặt phẳng cuối. `grip` bằng `1` để đóng kẹp và `0` để mở. Có thể dùng `gripper` thay cho `grip`.
-
-Nếu bộ chuyển đổi gửi keypoints đã ở hệ tọa độ simulation, có thể đặt điểm cổ tay làm mục tiêu:
-
-```json
-{ "keypoints": { "wrist": { "x": -1.82, "y": 0.99, "z": -1.48 } }, "grip": 0 }
-```
-
-Ví dụ gửi từ Python:
-
-```python
-import json
-import urllib.request
-
-command = {"target": {"x": -1.82, "y": 0.99, "z": -1.48}, "grip": 0}
-request = urllib.request.Request(
-    "http://127.0.0.1:8765/api/command",
-    data=json.dumps(command).encode(),
-    headers={"Content-Type": "application/json"},
-    method="POST",
-)
-print(urllib.request.urlopen(request).read().decode())
-```
-
-`GET /api/health` báo bridge sẵn sàng. `GET /api/command?after=<sequence>` trả lệnh mới nếu có; trình duyệt tự polling endpoint này. HTTP bridge chỉ bind vào `127.0.0.1` để nhận lệnh từ cùng máy.
+Để xem riêng cảnh Three.js minh họa, có thể chạy python simulation/serve.py rồi mở http://127.0.0.1:8765. Chế độ này không nhận webcam và không phải kết quả vật lý dùng để đánh giá demo tích hợp.
