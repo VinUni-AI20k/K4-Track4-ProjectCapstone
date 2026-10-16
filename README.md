@@ -23,7 +23,9 @@ Nhóm gồm 2 người và đã được chấp nhận tham gia với quy mô n�
 
 ## Bắt đầu phát triển
 
-Xem [hướng dẫn phối hợp](docs/development.md) để clone/pull, tạo branch và thống nhất giao diện module.
+Xem [hướng dẫn phối hợp](docs/development.md) để clone/pull và dùng giao diện module đã chốt.
+Quý làm `feature/eye-detection`; Tuyên làm `feature/demo-evaluation` song song bằng
+dữ liệu mẫu trong `scripts/mock_results.py`. Kiểu dữ liệu chung ở `src/contracts.py`.
 
 ```text
 app.py                    Điểm tích hợp ứng dụng (Quý)

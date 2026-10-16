@@ -89,7 +89,23 @@ PLAN.md
 index.html              # Trang đề bài gốc
 ```
 
-Đây là cấu trúc dự kiến, chưa phải các file đã triển khai.
+Khung thư mục đã tạo. Hợp đồng dữ liệu đã có tại `src/contracts.py`, nguồn mẫu tại
+`scripts/mock_results.py`; nhận diện, cảnh báo, overlay và logger chưa triển khai.
+
+### Quyết định phối hợp đã chốt
+
+- Quý làm branch `feature/eye-detection`; Tuyên làm branch `feature/demo-evaluation`.
+- Hai người làm song song. Tuyên dùng dữ liệu giả từ `scripts/mock_results.py`
+  để triển khai overlay/logger và chuẩn bị đánh giá, không chờ Quý hoàn thành.
+- Cùng dùng `EyeObservation`, `StateDecision`, `FrameResult`, `DriverState` và
+  `CSV_FIELDS` trong `src/contracts.py`. Tên hàm, lớp và quy ước đơn vị đã chốt
+  trong `docs/development.md`; đây là nguồn thống nhất khi tích hợp.
+- Quý sở hữu điểm tích hợp `app.py`, ghép kết quả thật thành `FrameResult`.
+  Tuyên thay nguồn mẫu bằng nguồn thật mà không đổi hợp đồng.
+- Chỉ kết quả kiểm thử và dữ liệu thật mới dùng trong báo cáo. Đo số liệu,
+  tìm ca lỗi, quay video dự phòng cần luồng thật của Quý và hai người cùng thực hiện.
+- Quý quản lý thay đổi hợp đồng lúc tích hợp; phải cập nhật tài liệu và thống nhất
+  với Tuyên trước khi merge thay đổi ảnh hưởng giao diện module.
 
 ## 3. Phân công và quy trình Git
 
@@ -100,7 +116,7 @@ index.html              # Trang đề bài gốc
 | Cả hai | Chốt giao diện module, tích hợp, diễn thử và kiểm tra bản cuối | Bản chạy trên máy demo, kết quả thật và video dự phòng |
 
 - Kiểm tra repo Public, quyền Collaborator và lời mời đã được chấp nhận.
-- Branch đề xuất: `feature/eye-detection` cho Quý, `feature/demo-evaluation` cho Tuyên.
+- Branch đã phân công: `feature/eye-detection` cho Quý, `feature/demo-evaluation` cho Tuyên.
 - Mỗi phần ưu tiên file riêng; thống nhất người tích hợp `app.py` để tránh sửa đè.
 - Commit từng phần chạy được, đẩy branch và kiểm tra thay đổi trước merge `main`.
 - Không commit môi trường ảo, cache, thông tin riêng hoặc toàn bộ dữ liệu quay thử. Thêm quy tắc bỏ qua trước lần commit ứng dụng đầu tiên.
