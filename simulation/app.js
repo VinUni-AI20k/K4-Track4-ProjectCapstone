@@ -9,13 +9,13 @@
   }
 
   var stage = $("stage"), renderer, scene, camera, clock = new T.Clock();
-  var pointer = { down: false, x: 0, y: 0 }, view = { yaw: 0.82, pitch: 0.53, distance: 10.6 }, focus = new T.Vector3(0, 0.68, 0);
+  var pointer = { down: false, x: 0, y: 0 }, view = { yaw: 0.82, pitch: 0.53, distance: 12.2 }, focus = new T.Vector3(.15, 0.68, 0);
   var mat = function (color, roughness, metalness) { return new T.MeshStandardMaterial({ color: color, roughness: roughness == null ? 0.72 : roughness, metalness: metalness || 0 }); };
   var mats = {
-    floor: mat(0x252f34), floorEdge: mat(0x39474b), steel: mat(0x53646b, .42, .72), darkSteel: mat(0x27363c, .48, .55),
-    belt: mat(0x192328, .94), rubber: mat(0x11191d, .9), silver: mat(0xb8c2c3, .3, .78), arm: mat(0xdaa24b, .36, .45),
-    armDark: mat(0x33464b, .4, .64), cyan: mat(0x63dece, .32, .26), orange: mat(0xf28b4a, .42, .12), black: mat(0x172126, .5, .2),
-    basket: mat(0x416d71, .52, .42), label: mat(0xd8e2de, .8), concrete: mat(0x303c40, .85), white: mat(0xe4e7de, .68)
+    floor: mat(0xcbd4dc), floorEdge: mat(0x8896a3), steel: mat(0x687b8c, .42, .62), darkSteel: mat(0x293746, .48, .48),
+    belt: mat(0x303943, .94), rubber: mat(0x1b232c, .9), silver: mat(0xdce4e9, .3, .62), arm: mat(0xf2a900, .36, .3),
+    armDark: mat(0x285b82, .4, .48), cyan: mat(0x12b8a6, .32, .2), orange: mat(0xef5b35, .42, .08), black: mat(0x202b36, .5, .16),
+    basket: mat(0x2468d7, .52, .22), label: mat(0xf2f1e9, .8), concrete: mat(0x788692, .85), white: mat(0xf8fafb, .68)
   };
 
   try {
@@ -32,13 +32,13 @@
   }
 
   scene = new T.Scene();
-  scene.background = new T.Color(0x182329);
-  scene.fog = new T.Fog(0x182329, 16, 34);
+  scene.background = new T.Color(0xdce4e9);
+  scene.fog = new T.Fog(0xdce4e9, 17, 36);
   camera = new T.PerspectiveCamera(38, stage.clientWidth / Math.max(stage.clientHeight, 1), .1, 80);
-  scene.add(new T.HemisphereLight(0xcce9eb, 0x252d2e, 2.05));
-  var keyLight = new T.DirectionalLight(0xffe5c4, 2.65); keyLight.position.set(-3, 10, 6); scene.add(keyLight);
-  var fillLight = new T.DirectionalLight(0x70a6b4, 1.1); fillLight.position.set(5, 5, -7); scene.add(fillLight);
-  var warmLight = new T.PointLight(0xffaa69, 17, 8, 2); warmLight.position.set(1, 4, 1); scene.add(warmLight);
+  scene.add(new T.HemisphereLight(0xf7fbff, 0x788692, 1.9));
+  var keyLight = new T.DirectionalLight(0xfff8e9, 2.15); keyLight.position.set(-3, 10, 6); scene.add(keyLight);
+  var fillLight = new T.DirectionalLight(0x8fc7df, 1.2); fillLight.position.set(5, 5, -7); scene.add(fillLight);
+  var warmLight = new T.PointLight(0xffedcc, 7.5, 8, 2); warmLight.position.set(1, 4, 1); scene.add(warmLight);
   var world = new T.Group(); scene.add(world);
 
   function box(parent, size, position, material, rotation) {
@@ -68,7 +68,7 @@
   box(world, [15, .16, 11], [0, -.11, 0], mats.floor);
   box(world, [15, .15, .12], [0, -.2, -5.42], mats.floorEdge);
   box(world, [15, .15, .12], [0, -.2, 5.42], mats.floorEdge);
-  var grid = new T.GridHelper(14, 28, 0x46555a, 0x344147); grid.position.y = -.025; grid.material.transparent = true; grid.material.opacity = .27; world.add(grid);
+  var grid = new T.GridHelper(14, 28, 0x8293a1, 0xaeb9c2); grid.position.y = -.025; grid.material.transparent = true; grid.material.opacity = .3; world.add(grid);
   // Cell boundary and a few compact service panels anchor the space without expensive scenery.
   [[-4.6, -2.4], [4.55, -2.4], [-4.6, 3.9], [4.55, 3.9]].forEach(function (p) {
     box(world, [.12, 2.2, .12], [p[0], 1.05, p[1]], mats.darkSteel);
@@ -88,35 +88,37 @@
 
   // Conveyor structure: rollers and moving belt marks provide motion while products wait for pickup.
   var belt = new T.Group(); world.add(belt);
-  var beltCenter = new T.Vector3(-1.68, .59, -1.48);
-  box(belt, [4.45, .15, 1.48], [beltCenter.x, .42, beltCenter.z], mats.darkSteel);
-  box(belt, [4.22, .08, 1.3], [beltCenter.x, .535, beltCenter.z], mats.belt);
-  box(belt, [4.35, .1, .09], [beltCenter.x, .59, beltCenter.z - .72], mats.steel);
-  box(belt, [4.35, .1, .09], [beltCenter.x, .59, beltCenter.z + .72], mats.steel);
+  var beltCenter = new T.Vector3(-.13, .59, -1.48);
+  box(belt, [8.25, .15, 1.48], [beltCenter.x, .42, beltCenter.z], mats.darkSteel);
+  box(belt, [8.02, .08, 1.3], [beltCenter.x, .535, beltCenter.z], mats.belt);
+  box(belt, [8.15, .1, .09], [beltCenter.x, .59, beltCenter.z - .72], mats.steel);
+  box(belt, [8.15, .1, .09], [beltCenter.x, .59, beltCenter.z + .72], mats.steel);
   var rollers = [];
-  for (var ri = 0; ri < 16; ri++) {
-    var rollerX = -3.72 + ri * .275;
+  for (var ri = 0; ri < 30; ri++) {
+    var rollerX = -4.0 + ri * .27;
     var roller = cylinder(belt, .075, .075, 1.28, [rollerX, .61, beltCenter.z], mats.silver, 12);
     roller.rotation.x = Math.PI / 2; rollers.push(roller);
   }
-  for (var legX of [-3.35, -.1]) for (var legZ of [-1.95, -1.02]) {
+  for (var legX of [-3.45, 3.2]) for (var legZ of [-1.95, -1.02]) {
     box(world, [.13, .41, .13], [legX, .18, legZ], mats.steel);
     box(world, [.36, .05, .36], [legX, -.015, legZ], mats.darkSteel);
   }
-  box(belt, [.14, .39, 1.48], [.54, .76, beltCenter.z], mats.orange);
-  box(belt, [.08, .25, 1.05], [.445, .91, beltCenter.z], mats.black);
-  var stopX = .22, conveyorEntryX = -3.76, conveyorSpeed = 1.15, itemSpacing = .62;
+  var stopX = 3.52, pickX = -1.82, conveyorEntryX = -3.78, conveyorSpeed = 1.15, itemSpacing = .62;
+  box(belt, [.14, .39, 1.48], [stopX + .38, .76, beltCenter.z], mats.orange);
+  box(belt, [.08, .25, 1.05], [stopX + .285, .91, beltCenter.z], mats.black);
   box(belt, [.075, .018, 1.2], [stopX, .59, beltCenter.z], mats.orange);
+  box(belt, [.045, .018, 1.2], [pickX, .59, beltCenter.z], mats.cyan);
   cylinder(world, .055, .055, .055, [stopX, 1.45, beltCenter.z - .58], mats.cyan, 12);
   cylinder(world, .055, .055, .055, [stopX, 1.45, beltCenter.z + .58], mats.cyan, 12);
   box(world, [.035, 1.68, .035], [stopX, .62, beltCenter.z - .58], mats.steel);
   box(world, [.035, 1.68, .035], [stopX, .62, beltCenter.z + .58], mats.steel);
-  var stopPlane = new T.Mesh(new T.PlaneGeometry(1.14, 1.55), new T.MeshBasicMaterial({ color: 0x63dece, transparent: true, opacity: .075, side: T.DoubleSide, depthWrite: false }));
+  var stopPlane = new T.Mesh(new T.PlaneGeometry(1.14, 1.55), new T.MeshBasicMaterial({ color: 0xef5b35, transparent: true, opacity: .12, side: T.DoubleSide, depthWrite: false }));
   stopPlane.rotation.y = Math.PI / 2; stopPlane.position.set(stopX, .95, beltCenter.z); world.add(stopPlane);
-  var stopLabel = label("PICK / STOP", "#f4a463"); stopLabel.scale.set(.85, .2, 1); stopLabel.position.set(stopX, 1.88, beltCenter.z - .02); world.add(stopLabel);
+  var stopLabel = label("END / EXIT", "#ffab5e"); stopLabel.scale.set(.78, .19, 1); stopLabel.position.set(stopX, 1.82, beltCenter.z - .02); world.add(stopLabel);
+  var pickLabel = label("PICK WINDOW", "#75e5d5"); pickLabel.scale.set(.98, .22, 1); pickLabel.position.set(pickX, 1.88, beltCenter.z - .02); world.add(pickLabel);
   var beltTicks = [];
-  for (var ti = 0; ti < 11; ti++) beltTicks.push(box(belt, [.025, .014, 1.16], [-3.62 + ti * .39, .589, beltCenter.z], mats.cyan));
-  var inLabel = label("INBOUND / 01", "#8de5d8"); inLabel.position.set(-1.65, 1.35, -2.36); world.add(inLabel);
+  for (var ti = 0; ti < 22; ti++) beltTicks.push(box(belt, [.025, .014, 1.16], [-4.0 + ti * .38, .589, beltCenter.z], mats.cyan));
+  var inLabel = label("INBOUND / 01", "#75e5d5"); inLabel.position.set(-3.15, 1.35, -2.36); world.add(inLabel);
 
   // Product cartons; a successful close near a carton attaches it to the gripper.
   var products = [];
@@ -126,12 +128,13 @@
     box(group, [.405, .035, .36], [0, .08, 0], mats.white);
     box(group, [.24, .02, .026], [0, .12, .168], mats.orange);
     var tag = label(code, "#dce9e8"); tag.scale.set(.48, .12, 1); tag.position.set(0, .23, .01); group.add(tag);
-    products.push({ group: group, status: "waiting", available: false, code: code, stopX: stopX });
+    products.push({ group: group, status: "waiting", available: false, code: code, stopX: stopX, expireIn: null });
   }
-  makeProduct(0x758fc2, "BOX / 01");
-  makeProduct(0xc48552, "BOX / 02");
-  makeProduct(0x668f83, "BOX / 03");
+  makeProduct(0xe53935, "BOX / 01");
+  makeProduct(0x8e44ad, "BOX / 02");
+  makeProduct(0x2e9d58, "BOX / 03");
   var nextProductIndex = 0, movingProduct = null, nextReleaseIn = 0;
+  function inArmReach(x, y, z) { return Math.hypot(x, y - 1.22, z) <= 2.62; }
   function releaseNextProduct() {
     if (movingProduct || nextProductIndex >= products.length) return;
     var product = products[nextProductIndex++];
@@ -140,26 +143,48 @@
     movingProduct = product;
   }
   function advanceConveyor(dt) {
+    products.forEach(function (product) {
+      if (product.status !== "stopped" || product.expireIn == null) return;
+      product.expireIn -= dt;
+      if (product.expireIn <= 0) {
+        product.group.visible = false; product.status = "gone"; product.available = false; product.expireIn = null;
+        nextReleaseIn = .25;
+      }
+    });
     if (movingProduct) {
-      var nextStopX = stopX;
+      var destinationX = demo ? pickX : stopX;
+      var nextStopX = destinationX;
       products.forEach(function (other) {
-        if (other === movingProduct || other.status !== "stopped") return;
+        if (other === movingProduct || other.status !== "stopped" || other.group.position.x <= movingProduct.group.position.x) return;
         nextStopX = Math.min(nextStopX, other.group.position.x - itemSpacing);
       });
       movingProduct.group.position.x = Math.min(nextStopX, movingProduct.group.position.x + conveyorSpeed * dt);
       movingProduct.stopX = nextStopX;
+      movingProduct.available = inArmReach(movingProduct.group.position.x, .99, beltCenter.z);
       if (movingProduct.group.position.x >= nextStopX - .002) {
         movingProduct.group.position.x = nextStopX;
         movingProduct.status = "stopped";
-        movingProduct.available = Math.abs(nextStopX - stopX) < .04;
-        movingProduct = null; nextReleaseIn = .72;
+        var atPick = demo && Math.abs(nextStopX - pickX) < .04;
+        var atExit = !demo && Math.abs(nextStopX - stopX) < .04;
+        movingProduct.available = atPick;
+        movingProduct.expireIn = atExit ? 1 : null;
+        movingProduct = null; nextReleaseIn = atExit ? 0 : .72;
       }
     } else {
-      var queued = products.filter(function (p) { return p.status === "stopped" && p.group.position.x < stopX - .04; })
-        .sort(function (a, b) { return b.group.position.x - a.group.position.x; })[0];
+      var destinationX = demo ? pickX : stopX;
+      var stopped = products.filter(function (p) { return p.status === "stopped"; });
+      var queued = stopped.filter(function (p) {
+        if (p.group.position.x >= destinationX - .04) return false;
+        var next = destinationX;
+        stopped.forEach(function (other) {
+          if (other !== p && other.group.position.x > p.group.position.x) next = Math.min(next, other.group.position.x - itemSpacing);
+        });
+        return next > p.group.position.x + .04;
+      }).sort(function (a, b) { return b.group.position.x - a.group.position.x; })[0];
       if (queued) {
-        queued.status = "moving"; queued.available = false; movingProduct = queued;
-      } else if (nextProductIndex < products.length) {
+        queued.status = "moving"; queued.available = false; queued.expireIn = null; movingProduct = queued;
+      } else if (!stopped.some(function (p) { return p.group.position.x < destinationX - .04; }) &&
+                 !products.some(function (p) { return p.status === "stopped" && p.expireIn != null; }) && nextProductIndex < products.length) {
         nextReleaseIn -= dt;
         if (nextReleaseIn <= 0) releaseNextProduct();
       }
@@ -279,13 +304,15 @@
     if (heldProduct || currentGrip < .68) return;
     var best = null, bestDistance = 1e9;
     products.forEach(function (product) {
-      if (!product.available || product.status !== "stopped") return;
+      if (!product.available || (product.status !== "stopped" && product.status !== "moving")) return;
       var p = product.group.position;
       var distance = Math.hypot(p.x - currentTarget.x, p.z - currentTarget.z);
       if (distance < bestDistance) { best = product; bestDistance = distance; }
     });
     if (best && bestDistance < .48 && Math.abs(currentTarget.y - .98) < .55) {
       heldProduct = best; heldProduct.available = false; heldProduct.status = "held";
+      heldProduct.expireIn = null;
+      if (movingProduct === heldProduct) { movingProduct = null; nextReleaseIn = .72; }
       showToast("Đã gắp " + heldProduct.code.toLowerCase());
     }
   }
@@ -305,7 +332,7 @@
   function makeDemoSteps() {
     demoSteps = [];
     products.forEach(function (product, index) {
-      var x = stopX, z = beltCenter.z, bx = basket.position.x + (index - 1) * .16, bz = basket.position.z;
+      var x = pickX, z = beltCenter.z, bx = basket.position.x + (index - 1) * .16, bz = basket.position.z;
       demoSteps.push({ waitFor: product, ms: 0 });
       demoSteps.push({ target: [x, 1.36, z], grip: 0, ms: 580 });
       demoSteps.push({ target: [x, .99, z], grip: 0, ms: 500 });
@@ -327,7 +354,7 @@
     heldProduct = null;
     products.forEach(function (p) {
       p.group.position.set(conveyorEntryX, .81, beltCenter.z); p.group.rotation.set(0, 0, 0);
-      p.group.visible = false; p.available = false; p.status = "waiting"; p.stopX = stopX;
+      p.group.visible = false; p.available = false; p.status = "waiting"; p.stopX = stopX; p.expireIn = null;
     });
     nextProductIndex = 0; movingProduct = null; nextReleaseIn = 0; basketCount = 0;
   }
@@ -378,7 +405,7 @@
       stopDemo(); updateStatus("Demo hoàn tất", "Đã chuyển " + basketCount + " sản phẩm vào giỏ", false); return;
     }
     if (step.waitFor) {
-      if (step.waitFor.status !== "stopped" || Math.abs(step.waitFor.group.position.x - stopX) >= .04) return;
+      if (step.waitFor.status !== "stopped" || Math.abs(step.waitFor.group.position.x - pickX) >= .04) return;
       demo.index++; demo.elapsed = 0; demo.from.copy(commandedTarget); demo.fromGrip = commandedGrip;
       return;
     }
@@ -423,7 +450,7 @@
     solveArm(); captureProduct();
     if (heldProduct && currentGrip < .25) releaseProduct();
     for (var i = 0; i < rollers.length; i++) rollers[i].rotation.z += dt * 2.3;
-    beltTicks.forEach(function (tick) { tick.position.x += dt * .28; if (tick.position.x > .49) tick.position.x = -3.72; });
+    beltTicks.forEach(function (tick) { tick.position.x += dt * .28; if (tick.position.x > 4.02) tick.position.x = -4.02; });
     targetDot.rotation.z += dt * .25; targetDot.material.opacity = .52 + Math.sin(performance.now() * .003) * .12;
     updateCamera(); updateTelemetry(); renderer.render(scene, camera);
   }
