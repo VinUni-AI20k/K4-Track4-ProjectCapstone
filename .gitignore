@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+data/
+results/colab/
+*.pt
+*.mp4
+.env
+colab/
+docs/COLAB.md
