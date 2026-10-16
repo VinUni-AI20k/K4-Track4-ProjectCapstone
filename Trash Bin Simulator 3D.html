@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trash Bin Simulator 3D</title>
+<style>
+:root{--bg:#eaf0f8;--panel:#fff;--line:#d3dcea;--ink:#14202f;--muted:#5a6a82;--code:#0a7a52;--field:#f4f7fb;--chip:#e3ecf8;--pri:#2f6fc0;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --font:"Be Vietnam Pro","Segoe UI",system-ui,-apple-system,Arial,sans-serif;--mono:"JetBrains Mono","Cascadia Mono",Consolas,monospace}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#070b12;--panel:#111927;--line:#26364f;--ink:#e9f0fb;--muted:#8ea1bf;--code:#9ee6c8;--field:#080e17;--chip:#17243a;--pri:#4a90e2}}
+:root[data-theme="dark"]{--bg:#070b12;--panel:#111927;--line:#26364f;--ink:#e9f0fb;--muted:#8ea1bf;--code:#9ee6c8;--field:#080e17;--chip:#17243a;--pri:#4a90e2}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font);overflow:hidden}
+.app{display:grid;grid-template-columns:330px minmax(0,1fr);gap:12px;padding:12px;height:100%}
+.side{display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px}
+h1{font-size:20px;margin:0 0 6px;letter-spacing:-.01em}
+h2{font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+p{margin:0}.sub{color:var(--muted);font-size:13.5px}
+.chip{display:inline-block;font:11px var(--mono);color:var(--muted);background:var(--chip);border-radius:999px;padding:2px 10px;margin-top:10px}
+textarea{width:100%;min-height:78px;resize:vertical;font:14px var(--mono);background:var(--field);color:var(--code);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea:focus{outline:none;border-color:var(--pri)}
+button{font:inherit;font-size:13.5px;border-radius:10px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:var(--field);color:var(--ink)}
+button:hover{border-color:var(--pri)}
+button.primary{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:700}
+button.ghost{font:12px var(--mono);padding:5px 10px;border-radius:8px}
+.row,.presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.presets{gap:6px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:10px}
+.hint code{font:12px var(--mono);background:var(--chip);padding:1px 5px;border-radius:5px}
+label.toggle{display:flex;gap:9px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);cursor:pointer}
+label.toggle input{width:16px;height:16px;accent-color:var(--pri)}
+.stagecol{display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px;min-height:0}
+.hud{display:flex;gap:8px;flex-wrap:wrap}
+.badge{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:13px;transition:border-color .3s}
+.badge .dot{width:9px;height:9px;border-radius:50%;background:var(--ac);opacity:.35;transition:.3s}
+.badge .n{font:13px var(--mono);color:var(--muted)}
+.badge.on{border-color:var(--ac)}.badge.on .dot{opacity:1;box-shadow:0 0 10px var(--ac)}.badge.on .n{color:var(--ink);font-weight:700}
+.scene{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:380px;background:#0a1220}
+.scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.overlay{position:absolute;left:0;right:0;bottom:0;padding:12px 14px;display:flex;gap:10px;align-items:flex-end;justify-content:space-between;pointer-events:none}
+.status{font:12.5px var(--mono);color:#8ea1bf}.status b{color:#6ddc8b}
+.views{display:flex;gap:6px;pointer-events:auto}
+.views button{background:rgba(10,18,30,.75);color:#e9f0fb;border-color:#2a3b57}
+.log{max-height:150px;overflow:auto}
+.log div{display:grid;grid-template-columns:88px minmax(0,1fr);gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
+.log div:last-child{border:none}.log time{font:11.5px var(--mono);color:var(--muted)}
+.log .err b{color:#e5484d}.log .ok b{color:#1f9d55}
+@media(max-width:860px){body{overflow:auto}.app{grid-template-columns:minmax(0,1fr);height:auto}.stagecol{order:-1}.scene{height:440px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="card">
+      <h1>Trash Bin Simulator</h1>
+      <p class="sub">Tầng actuator của hệ thống. Perception phát ra một <b>state</b>; loại nào có số &gt; 0 thì nắp thùng đó mở và rác rơi vào bên trong.</p>
+      <span class="chip">camera → state → servo nắp thùng</span>
+    </div>
+    <div class="card">
+      <h2>State từ perception</h2>
+      <textarea id="json" spellcheck="false">{"metal": 3, "paper": 2}</textarea>
+      <div class="row"><button class="primary" id="apply">Mở thùng theo state</button><button id="close">Đóng tất cả</button></div>
+      <div class="presets" id="presets"></div>
+      <label class="toggle"><input type="checkbox" id="auto" checked> Tự đóng nắp sau 5 giây</label>
+      <label class="toggle"><input type="checkbox" id="orbit" checked> Camera lắc nhẹ</label>
+      <p class="hint">Gọi từ CV code: <code>TrashBins.setState({plastic:1})</code>. Kéo để xoay, lăn chuột để zoom.</p>
+    </div>
+    <div class="card"><h2>Nhật ký quyết định</h2><div class="log" id="log"></div></div>
+  </aside>
+  <main class="stagecol">
+    <div class="hud" id="hud"></div>
+    <section class="scene" id="scene">
+      <div class="overlay">
+        <span class="status" id="status">tất cả đóng</span>
+        <div class="views">
+          <button class="ghost" data-view="front">Chính diện</button>
+          <button class="ghost" data-view="iso">Góc 45°</button>
+          <button class="ghost" data-view="top">Từ trên</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var sceneEl = $("scene");
+  if (!window.THREE) { sceneEl.insertAdjacentHTML("afterbegin", '<p style="padding:20px;color:#9fb">Không tải được three.js.</p>'); return; }
+
+  var CONFIG = [
+    { key: "metal",   label: "Kim loại", accent: "#6ea8fe" },
+    { key: "paper",   label: "Giấy",     accent: "#f0b964" },
+    { key: "plastic", label: "Nhựa",     accent: "#45d6c4" },
+    { key: "organic", label: "Hữu cơ",   accent: "#6ddc8b" }
+  ];
+  var SPACING = 1.6, AUTO_CLOSE_MS = 5000, MAX_ITEMS = 5, OPEN_ANGLE = 1.9;
+  var logEl = $("log"), statusEl = $("status"), jsonEl = $("json"), autoEl = $("auto"), orbitEl = $("orbit"), hudEl = $("hud");
+  var nodes = {}, closeTimer = null;
+
+  /* ---------- renderer / scene ---------- */
+  var renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  sceneEl.insertBefore(renderer.domElement, sceneEl.firstChild);
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a1220);
+  scene.fog = new THREE.Fog(0x0a1220, 10, 26);
+  var camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
+  var target = new THREE.Vector3(0, 0.6, 0);
+
+  scene.add(new THREE.HemisphereLight(0x9bb8ff, 0x1a2233, 0.75));
+  var sun = new THREE.DirectionalLight(0xffffff, 1.0);
+  sun.position.set(3.5, 7, 5);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  var sc = sun.shadow.camera; sc.left = -5; sc.right = 5; sc.top = 5; sc.bottom = -5; sc.near = 1; sc.far = 20;
+  sun.shadow.bias = -0.0004;
+  scene.add(sun);
+  var rimLight = new THREE.DirectionalLight(0x6ea8fe, 0.45);
+  rimLight.position.set(-4, 3, -5);
+  scene.add(rimLight);
+
+  function gridTexture() {
+    var c = document.createElement("canvas"); c.width = c.height = 256;
+    var x = c.getContext("2d");
+    x.fillStyle = "#0e182a"; x.fillRect(0, 0, 256, 256);
+    x.strokeStyle = "#1d2d49"; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256);
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(24, 24); t.anisotropy = 4;
+    return t;
+  }
+  var floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ map: gridTexture(), roughness: 0.85 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+  scene.add(floor);
+
+  /* ---------- bin builder ---------- */
+  function mat(color, o) { return new THREE.MeshStandardMaterial(Object.assign({ color: color, roughness: 0.5, metalness: 0.1 }, o || {})); }
+  function V(x, y) { return new THREE.Vector2(x, y); }
+
+  function drawLabel(n) {
+    var c = n.ctx, W = 512, H = 430;
+    c.fillStyle = "#0c1524"; c.fillRect(0, 0, W, H);
+    c.fillStyle = n.cfg.accent; c.fillRect(0, 0, W, 16);
+    c.textAlign = "center";
+    c.fillStyle = "#d6e2f3"; c.font = "600 48px system-ui,sans-serif"; c.fillText(n.cfg.label, W / 2, 106);
+    c.fillStyle = n.cfg.accent; c.font = "700 150px ui-monospace,Consolas,monospace"; c.fillText(String(n.count), W / 2, 272);
+    c.fillStyle = "#7f93b2"; c.font = "500 28px ui-monospace,Consolas,monospace";
+    c.fillText(n.cfg.key.toUpperCase() + (n.open ? "  ·  MỞ" : ""), W / 2, 366);
+    n.tex.needsUpdate = true;
+  }
+
+  function makeBin(cfg, x) {
+    var accent = new THREE.Color(cfg.accent);
+    var g = new THREE.Group(); g.position.x = x; scene.add(g);
+
+    var plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.86, 0.04, 56), mat(0x121c2e, { roughness: 0.7 }));
+    plinth.position.y = 0.02; plinth.receiveShadow = true; g.add(plinth);
+
+    var bodyMat = mat(accent.clone().multiplyScalar(0.62), { roughness: 0.42, side: THREE.DoubleSide });
+    var outer = new THREE.Mesh(new THREE.LatheGeometry([V(0.001, 0.04), V(0.43, 0.04), V(0.465, 0.09), V(0.52, 0.64), V(0.56, 1.2)], 64), bodyMat);
+    outer.castShadow = outer.receiveShadow = true; g.add(outer);
+    var inner = new THREE.Mesh(new THREE.LatheGeometry([V(0.001, 0.14), V(0.41, 0.14), V(0.45, 0.24), V(0.5, 1.21)], 64),
+      mat(accent.clone().multiplyScalar(0.18), { roughness: 0.9, side: THREE.DoubleSide }));
+    inner.receiveShadow = true; g.add(inner);
+    var rim = new THREE.Mesh(new THREE.TorusGeometry(0.53, 0.034, 14, 72), mat(0x1b2535, { metalness: 0.5, roughness: 0.35 }));
+    rim.rotation.x = Math.PI / 2; rim.position.y = 1.21; rim.castShadow = true; g.add(rim);
+
+    var cv = document.createElement("canvas"); cv.width = 512; cv.height = 430;
+    var tex = new THREE.CanvasTexture(cv); tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
+    var decal = new THREE.Mesh(new THREE.CylinderGeometry(0.551, 0.511, 0.5, 40, 1, true, -0.575, 1.15),
+      new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+    decal.position.y = 0.7; g.add(decal);
+
+    var pivot = new THREE.Group(); pivot.position.set(0, 1.235, -0.56); g.add(pivot);
+    var lidMats = [mat(accent.clone().multiplyScalar(0.8), { roughness: 0.35 }), mat(accent, { roughness: 0.3 }), mat(0x10192a, { roughness: 0.9 })];
+    var lid = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.08, 56), lidMats);
+    lid.position.set(0, 0.03, 0.56); lid.castShadow = true; pivot.add(lid);
+    var handle = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.022, 10, 24, Math.PI), mat(0x1b2535, { metalness: 0.5 }));
+    handle.position.set(0, 0.07, 0.98); handle.rotation.z = 0; handle.castShadow = true; pivot.add(handle);
+    var led = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: accent, emissiveIntensity: 0.2 }));
+    led.position.set(0, 0.075, 0.82); pivot.add(led);
+    var hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.36, 14), mat(0x1b2535, { metalness: 0.6 }));
+    hinge.rotation.z = Math.PI / 2; hinge.position.set(0, 0, 0); pivot.add(hinge);
+
+    var light = new THREE.PointLight(accent, 0, 3.4); light.position.set(0, 0.8, 0); g.add(light);
+    var ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 0.96, 64), new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: 0, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.012; g.add(ring);
+    var items = new THREE.Group(); g.add(items);
+
+    var n = { cfg: cfg, g: g, pivot: pivot, led: led, light: light, ring: ring, itemsG: items, items: [],
+      ctx: cv.getContext("2d"), tex: tex, count: 0, open: false, angle: 0, vel: 0 };
+    drawLabel(n);
+    return n;
+  }
+
+  /* ---------- items ---------- */
+  function makeItem(key) {
+    var g = new THREE.Group(), r = 0.1;
+    if (key === "metal") {
+      var can = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.2, 22), mat(0xcdd5df, { metalness: 0.9, roughness: 0.25 }));
+      var band = new THREE.Mesh(new THREE.CylinderGeometry(0.0715, 0.0715, 0.09, 22), mat(0x4f86d9, { metalness: 0.6, roughness: 0.35 }));
+      g.add(can, band); g.userData.fin = [Math.PI / 2, 0, 1]; r = 0.07;
+    } else if (key === "paper") {
+      var geo = new THREE.IcosahedronGeometry(0.13, 1), p = geo.attributes.position;
+      for (var i = 0; i < p.count; i++) { var s = 0.85 + Math.random() * 0.3; p.setXYZ(i, p.getX(i) * s, p.getY(i) * s, p.getZ(i) * s); }
+      geo.computeVertexNormals();
+      g.add(new THREE.Mesh(geo, mat(0xf1ead9, { roughness: 1, flatShading: true }))); r = 0.12;
+    } else if (key === "plastic") {
+      var bottle = new THREE.Mesh(new THREE.LatheGeometry([V(0.001, 0), V(0.055, 0), V(0.065, 0.03), V(0.065, 0.17), V(0.042, 0.23), V(0.024, 0.26), V(0.024, 0.3)], 20),
+        mat(0x45d6c4, { transparent: true, opacity: 0.72, roughness: 0.15, side: THREE.DoubleSide }));
+      var cap = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.04, 14), mat(0x1c8f84));
+      cap.position.y = 0.31; g.add(bottle, cap);
+      g.children.forEach(function (c) { c.position.y -= 0.15; });
+      g.userData.fin = [Math.PI / 2, 0, 1]; r = 0.065;
+    } else {
+      var apple = new THREE.Mesh(new THREE.SphereGeometry(0.11, 22, 16), mat(0xd9483f, { roughness: 0.4 }));
+      apple.scale.y = 0.9;
+      var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.05, 6), mat(0x5b3a1e));
+      stem.position.y = 0.11; g.add(apple, stem); r = 0.1;
+    }
+    g.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
+    g.userData.r = r;
+    return g;
+  }
+
+  function clearItems(n) {
+    n.items.forEach(function (it) {
+      n.itemsG.remove(it.m);
+      it.m.traverse(function (o) { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+    });
+    n.items = [];
+  }
+
+  function dropItems(n, count) {
+    clearItems(n);
+    var spawn = Math.min(count, MAX_ITEMS);
+    for (var i = 0; i < spawn; i++) {
+      var m = makeItem(n.cfg.key), a = i * 2.4, rad = 0.06 + 0.07 * (i % 3);
+      var fin = m.userData.fin || [Math.random() * 6, Math.random() * 6, Math.random() * 6];
+      var f = [fin[0], Math.random() * 6, fin.length === 3 && m.userData.fin ? 0 : Math.random() * 6];
+      m.position.set(Math.cos(a) * rad, 2.3, Math.sin(a) * rad);
+      m.rotation.set(f[0] + (Math.random() - 0.5) * 5, f[1] + (Math.random() - 0.5) * 5, f[2] + (Math.random() - 0.5) * 5);
+      m.visible = false;
+      n.itemsG.add(m);
+      n.items.push({ m: m, t: -(0.4 + i * 0.17), vy: 0, ty: 0.14 + m.userData.r + i * 0.05, f: f, done: false });
+    }
+  }
+
+  CONFIG.forEach(function (cfg, i) {
+    var n = makeBin(cfg, (i - (CONFIG.length - 1) / 2) * SPACING);
+    nodes[cfg.key] = n;
+    var b = document.createElement("div");
+    b.className = "badge"; b.style.setProperty("--ac", cfg.accent);
+    b.innerHTML = '<span class="dot"></span>' + cfg.label + ' <span class="n">0</span>';
+    hudEl.appendChild(b); n.badge = b; n.badgeN = b.querySelector(".n");
+  });
+
+  /* ---------- logic (state → bins) ---------- */
+  function log(cls, title, detail) {
+    var d = document.createElement("div"), t = new Date();
+    function p(v, l) { return String(v).padStart(l, "0"); }
+    d.className = cls;
+    d.innerHTML = "<time>" + p(t.getHours(), 2) + ":" + p(t.getMinutes(), 2) + ":" + p(t.getSeconds(), 2) + "." + p(t.getMilliseconds(), 3) + "</time><span><b>" + title + "</b> " + detail + "</span>";
+    logEl.insertBefore(d, logEl.firstChild);
+    while (logEl.children.length > 40) logEl.removeChild(logEl.lastChild);
+  }
+
+  function setBin(n, open, count) {
+    n.open = open; n.count = count;
+    n.badge.classList.toggle("on", open);
+    n.badgeN.textContent = String(count);
+    drawLabel(n);
+  }
+
+  function closeAll() {
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    CONFIG.forEach(function (b) { var n = nodes[b.key]; setBin(n, false, 0); clearItems(n); });
+    statusEl.innerHTML = "tất cả đóng";
+  }
+
+  function normalize(state) {
+    var opens = [], unknown = [];
+    CONFIG.forEach(function (b) {
+      var raw = state[b.key], v = raw == null ? 0 : Number(raw);
+      if (!isFinite(v) || v < 0) v = 0;
+      v = Math.floor(v);
+      if (v > 0) opens.push({ key: b.key, n: v });
+    });
+    Object.keys(state).forEach(function (k) { if (!nodes[k]) unknown.push(k); });
+    return { opens: opens, unknown: unknown };
+  }
+
+  function setState(state, source) {
+    if (typeof state === "string") {
+      try { state = JSON.parse(state); } catch (e) { log("err", "JSON lỗi.", e.message); return false; }
+    }
+    if (!state || typeof state !== "object" || Array.isArray(state)) {
+      log("err", "State không hợp lệ.", "cần object như {metal:3,paper:2}"); return false;
+    }
+    var t0 = performance.now(), res = normalize(state);
+    CONFIG.forEach(function (b) {
+      var o = res.opens.filter(function (x) { return x.key === b.key; })[0], n = nodes[b.key];
+      setBin(n, !!o, o ? o.n : 0);
+      if (o) dropItems(n, o.n); else clearItems(n);
+    });
+    requestAnimationFrame(function () {
+      var detail = res.opens.length ? res.opens.map(function (o) { return o.key + " ×" + o.n; }).join(", ") : "không có loại nào > 0";
+      log("ok", (source || "state") + " →", "mở: " + detail + " · trễ " + (performance.now() - t0).toFixed(1) + " ms");
+      if (res.unknown.length) log("err", "Bỏ qua khóa lạ:", res.unknown.join(", "));
+      statusEl.innerHTML = res.opens.length ? "đang mở: <b>" + res.opens.map(function (o) { return o.key; }).join(", ") + "</b>" : "tất cả đóng";
+    });
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    if (autoEl.checked) closeTimer = setTimeout(function () { log("ok", "Tự đóng nắp.", "hết " + AUTO_CLOSE_MS / 1000 + " giây"); closeAll(); }, AUTO_CLOSE_MS);
+    return true;
+  }
+
+  var PRESETS = [
+    { label: '{"metal":3,"paper":2}', state: { metal: 3, paper: 2 } },
+    { label: "1 chai nhựa", state: { plastic: 1 } },
+    { label: "lon + hộp", state: { metal: 4, paper: 2 } },
+    { label: "cả 4 loại", state: { metal: 2, paper: 3, plastic: 1, organic: 2 } },
+    { label: "ca lỗi: khóa lạ", state: { metal: 1, glass: 2 } }
+  ];
+  PRESETS.forEach(function (p) {
+    var bt = document.createElement("button");
+    bt.className = "ghost"; bt.textContent = p.label;
+    bt.addEventListener("click", function () { jsonEl.value = JSON.stringify(p.state); setState(p.state, "preset"); });
+    $("presets").appendChild(bt);
+  });
+  $("apply").addEventListener("click", function () { setState(jsonEl.value, "state"); });
+  $("close").addEventListener("click", function () { closeAll(); log("ok", "Đóng tất cả.", "reset thủ công"); });
+
+  /* ---------- camera (orbit) ---------- */
+  var VIEWS = { front: [0, 0.16, 1], iso: [0.6, 0.55, 0.95], top: [0.25, 1.12, 0.85] };
+  var th = 0.6, el = 0.55, zm = 0.95, tTh = 0.6, tEl = 0.55, tZm = 0.95, dragging = false, lx = 0, ly = 0;
+  function setView(name) {
+    var v = VIEWS[name]; if (!v) return;
+    tTh = v[0]; tEl = v[1]; tZm = v[2]; orbitEl.checked = false;
+  }
+  var cvs = renderer.domElement;
+  cvs.addEventListener("pointerdown", function (e) { dragging = true; lx = e.clientX; ly = e.clientY; cvs.setPointerCapture(e.pointerId); cvs.style.cursor = "grabbing"; });
+  cvs.addEventListener("pointermove", function (e) {
+    if (!dragging) return;
+    tTh -= (e.clientX - lx) * 0.007; tEl = Math.max(0.05, Math.min(1.4, tEl + (e.clientY - ly) * 0.005));
+    lx = e.clientX; ly = e.clientY; orbitEl.checked = false;
+  });
+  function endDrag() { dragging = false; cvs.style.cursor = "grab"; }
+  cvs.addEventListener("pointerup", endDrag); cvs.addEventListener("pointercancel", endDrag);
+  cvs.addEventListener("wheel", function (e) { e.preventDefault(); tZm = Math.max(0.45, Math.min(1.5, tZm * Math.exp(e.deltaY * 0.001))); }, { passive: false });
+  window.addEventListener("keydown", function (e) {
+    if (e.target.tagName === "TEXTAREA") return;
+    if (e.key === "ArrowLeft") tTh -= 0.1; else if (e.key === "ArrowRight") tTh += 0.1;
+    else if (e.key === "ArrowUp") tEl = Math.min(1.4, tEl + 0.06); else if (e.key === "ArrowDown") tEl = Math.max(0.05, tEl - 0.06);
+    else return;
+    orbitEl.checked = false;
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".views button"), function (bt) {
+    bt.addEventListener("click", function () { setView(bt.dataset.view); });
+  });
+
+  function resize() {
+    var w = sceneEl.clientWidth, h = sceneEl.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(sceneEl); else window.addEventListener("resize", resize);
+  resize();
+
+  /* ---------- loop ---------- */
+  var clock = new THREE.Clock(), time = 0;
+  function frame() {
+    var dt = Math.min(clock.getDelta(), 0.033); time += dt;
+    var k = 1 - Math.exp(-dt * 6);
+    var goalTh = tTh + (orbitEl.checked ? Math.sin(time * 0.4) * 0.5 : 0);
+    th += (goalTh - th) * k; el += (tEl - el) * k; zm += (tZm - zm) * k;
+    var vf = camera.fov * Math.PI / 180, hh = Math.tan(vf / 2) * camera.aspect;
+    var dist = Math.max(3.5 / hh, 2.5 / Math.tan(vf / 2)) * zm;
+    camera.position.set(target.x + Math.sin(th) * Math.cos(el) * dist, target.y + Math.sin(el) * dist, target.z + Math.cos(th) * Math.cos(el) * dist);
+    camera.lookAt(target);
+
+    CONFIG.forEach(function (b) {
+      var n = nodes[b.key], goal = n.open ? OPEN_ANGLE : 0;
+      n.vel += ((goal - n.angle) * 70 - n.vel * 9) * dt; n.angle += n.vel * dt;
+      n.pivot.rotation.x = -n.angle;
+      n.led.material.emissiveIntensity += ((n.open ? 3 : 0.2) - n.led.material.emissiveIntensity) * Math.min(1, dt * 8);
+      n.light.intensity += ((n.open ? 1.6 : 0) - n.light.intensity) * Math.min(1, dt * 6);
+      var ro = n.ring.material.opacity, rt = n.open ? 0.25 + 0.3 * (0.5 + 0.5 * Math.sin(time * 4)) : 0;
+      n.ring.material.opacity = ro + (rt - ro) * Math.min(1, dt * 6);
+      n.ring.scale.setScalar(1 + (n.open ? 0.06 * Math.sin(time * 4) : 0));
+      n.items.forEach(function (it) {
+        it.t += dt; if (it.t < 0) return;
+        it.m.visible = true;
+        var m = it.m;
+        it.vy -= 9 * dt; m.position.y += it.vy * dt;
+        if (m.position.y <= it.ty) { m.position.y = it.ty; it.vy = it.vy < -0.9 ? -it.vy * 0.25 : 0; }
+        var rk = Math.min(1, dt * 2.6);
+        m.rotation.x += (it.f[0] - m.rotation.x) * rk; m.rotation.y += (it.f[1] - m.rotation.y) * rk; m.rotation.z += (it.f[2] - m.rotation.z) * rk;
+      });
+    });
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  window.TrashBins = { config: CONFIG, setState: function (s) { return setState(s, "api"); }, closeAll: closeAll, setView: setView };
+  closeAll();
+  log("ok", "Sẵn sàng.", "nhận state từ perception và mở nắp tương ứng");
+  frame();
+})();
+</script>
+</body>
+</html>
