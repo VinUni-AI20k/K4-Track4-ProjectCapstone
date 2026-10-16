@@ -41,9 +41,10 @@ class PerceptionState:
 
 state = PerceptionState()
 
-# Ánh xạ từ nhãn detector sang key của Simulator (plastic, other)
+# Ánh xạ từ nhãn detector sang key của Simulator (recycle, other)
 MATERIAL_TO_SIM_KEY = {
-    "Plastic": "plastic",
+    "Plastic": "recycle",
+    "Recycle": "recycle",
     "Còn lại": "other",
     "Other": "other",
     "Waste": "other"
@@ -125,8 +126,8 @@ def camera_perception_loop():
             cls_name = det["material_class"]
             conf = det["confidence"]
 
-            # Màu theo loại vật liệu: Xanh ngọc cho Plastic, Vàng cam cho Còn lại, Xám nhạt cho Person
-            if cls_name == "Plastic":
+            # Màu theo loại vật liệu: Xanh ngọc cho Plastic/Recycle, Vàng cam cho Còn lại, Xám nhạt cho Person
+            if cls_name in ["Plastic", "Recycle"]:
                 color = (69, 214, 196)  # Xanh ngọc
             elif cls_name == "Còn lại":
                 color = (100, 185, 240)  # Vàng cam
@@ -138,13 +139,13 @@ def camera_perception_loop():
             cv2.putText(annotated, label, (x1, max(20, y1 - 8)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
 
-            # Chỉ kích hoạt mở thùng rác cho vật phẩm rác thực thụ (Plastic hoặc Còn lại)
+            # Chỉ kích hoạt mở thùng rác cho vật phẩm rác thực thụ (Plastic/Recycle hoặc Còn lại)
             # Tuyệt đối BỎ QUA NGƯỜI (Person) và đồ dùng văn phòng/nội thất
-            if cls_name in ["Plastic", "Còn lại"] and conf >= 0.45:
+            if cls_name in ["Plastic", "Recycle", "Còn lại"] and conf >= 0.45:
                 sim_key = MATERIAL_TO_SIM_KEY.get(cls_name)
                 if sim_key:
                     detected_event = {
-                        "label": cls_name,
+                        "label": "Recycle" if cls_name == "Plastic" else cls_name,
                         "conf": conf,
                         "state": {sim_key: 1}
                     }
